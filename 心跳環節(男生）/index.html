@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>告解室 — 心跳節奏分支</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <section class="rhythm-scene" id="rhythmScene" aria-label="心跳節奏檢定">
+      <!-- 左上角神父對話框（含打字機效果與點擊繼續提示） -->
+      <div
+        class="rhythm-dialogue-box is-clickable"
+        id="rhythmDialogueBox"
+        role="button"
+        tabindex="0"
+        aria-label="神父對話框"
+      >
+        <p class="rhythm-dialogue-text" id="rhythmDialogueText"></p>
+        <span class="dialogue-next-hint" id="dialogueNextHint">點擊繼續 ▾</span>
+      </div>
+
+      <!-- 右上角狀態列：信任值與時間限制 -->
+      <div class="rhythm-hud" id="rhythmHud" aria-label="狀態數值">
+        <div class="hud-card hud-trust" id="hudTrustCard">
+          <span class="hud-label">信任值</span>
+          <span class="hud-value" id="trustValueText">100</span>
+          <span class="hud-delta" id="trustDeltaPop" aria-hidden="true"
+            >-15</span
+          >
+        </div>
+        <div class="hud-card hud-timer" id="hudTimerCard">
+          <span class="hud-label">剩餘時間</span>
+          <span class="hud-value" id="timerValueText">16.0s</span>
+        </div>
+      </div>
+
+      <!-- 中間不規則心跳節奏條與移動箭頭 -->
+      <div class="rhythm-track-area is-standby" id="rhythmTrackArea">
+        <!-- 心律狀態、倒數條與 4 階段波次進度燈 -->
+        <div class="rhythm-wave-status" aria-label="心跳穩定進度">
+          <span class="wave-label" id="rhythmWaveLabel">等待對話結束…</span>
+          <div class="wave-pips" id="rhythmWavePips">
+            <span class="wave-pip is-current"></span>
+            <span class="wave-pip"></span>
+            <span class="wave-pip"></span>
+            <span class="wave-pip"></span>
+          </div>
+        </div>
+
+        <!-- 時間限制細條 -->
+        <div class="rhythm-time-bar" aria-hidden="true">
+          <div class="rhythm-time-fill" id="rhythmTimeFill"></div>
+        </div>
+
+        <!-- 水平節奏長條 -->
+        <div class="rhythm-bar" id="rhythmBar">
+          <!-- 紅色判定區域與左右兩側深色標記線 -->
+          <div class="rhythm-red-zone" id="rhythmRedZone">
+            <span class="zone-bound bound-left" aria-hidden="true"></span>
+            <span class="zone-bound bound-right" aria-hidden="true"></span>
+          </div>
+          <!-- 節奏拍點提示波紋 -->
+          <span
+            class="rhythm-beat-flash"
+            id="rhythmBeatFlash"
+            aria-hidden="true"
+          ></span>
+        </div>
+
+        <!-- 下方移動三角形指針 -->
+        <div class="rhythm-arrow-track">
+          <div class="rhythm-arrow" id="rhythmArrow" aria-hidden="true"></div>
+        </div>
+
+        <!-- 判定結果浮動文字（「完美通過」 / 「信任值-15」） -->
+        <div
+          class="rhythm-judgment"
+          id="rhythmJudgment"
+          aria-live="polite"
+        ></div>
+      </div>
+
+      <!-- 右側角色立繪與胸口紅心點擊按鈕 -->
+      <div class="rhythm-character-wrap" id="rhythmCharacterWrap">
+        <img
+          class="rhythm-character-img is-black-bg"
+          id="rhythmCharacterImg"
+          src="./images/IMG_8962 2.svg"
+          alt="角色按住胸口"
+        />
+
+        <!-- 胸口紅心按鈕（隨心跳脈動，可點擊或按空白鍵觸發） -->
+        <button
+          type="button"
+          class="rhythm-heart-btn"
+          id="rhythmHeartBtn"
+          aria-label="點擊紅心穩定心跳"
+          disabled
+        >
+          <span class="heart-shockwave" aria-hidden="true"></span>
+          <svg
+            class="heart-svg"
+            viewBox="0 0 120 110"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              class="heart-shape"
+              d="M 60 98 C 60 98 12 68 12 35 C 12 18 25 8 40 8 C 50 8 57 14 60 21 C 63 14 70 8 80 8 C 95 8 108 18 108 35 C 108 68 60 98 60 98 Z"
+            />
+          </svg>
+          <span class="heart-label">點擊</span>
+        </button>
+      </div>
+
+      <!-- 左下角七支蠟燭素材（Candle_0.png 為底圖，初始 7 根全亮；過關熄滅 2 根、失敗熄滅 3 根） -->
+      <div
+        class="rhythm-candles-wrap"
+        id="rhythmCandlesWrap"
+        aria-label="燭火狀態"
+      >
+        <img
+          class="rhythm-candles-img"
+          id="rhythmCandlesImg"
+          src="./images/Candle_0.png"
+          alt="七支蠟燭"
+        />
+        <div class="candle-flame-slot slot-1" data-candle-index="0">
+          <span class="slot-glow"></span>
+          <span class="slot-flame"></span>
+          <span class="slot-smoke"></span>
+        </div>
+        <div class="candle-flame-slot slot-2" data-candle-index="1">
+          <span class="slot-glow"></span>
+          <span class="slot-flame"></span>
+          <span class="slot-smoke"></span>
+        </div>
+        <div class="candle-flame-slot slot-3" data-candle-index="2">
+          <span class="slot-glow"></span>
+          <span class="slot-flame"></span>
+          <span class="slot-smoke"></span>
+        </div>
+        <div class="candle-flame-slot slot-4" data-candle-index="3">
+          <span class="slot-glow"></span>
+          <span class="slot-flame"></span>
+          <span class="slot-smoke"></span>
+        </div>
+        <div class="candle-flame-slot slot-5" data-candle-index="4">
+          <span class="slot-glow"></span>
+          <span class="slot-flame"></span>
+          <span class="slot-smoke"></span>
+        </div>
+        <div class="candle-flame-slot slot-6" data-candle-index="5">
+          <span class="slot-glow"></span>
+          <span class="slot-flame"></span>
+          <span class="slot-smoke"></span>
+        </div>
+        <div class="candle-flame-slot slot-7" data-candle-index="6">
+          <span class="slot-glow"></span>
+          <span class="slot-flame"></span>
+          <span class="slot-smoke"></span>
+        </div>
+      </div>
+
+      <!-- 下方深色操作提示框 -->
+      <div class="rhythm-instruction-box" id="rhythmInstructionBox">
+        <p class="rhythm-instruction-text" id="rhythmInstructionText"></p>
+        <button
+          type="button"
+          class="rhythm-action-btn"
+          id="rhythmActionBtn"
+          hidden
+        >
+          繼續對話
+        </button>
+      </div>
+    </section>
+
+    <script src="motion.js"></script>
+  </body>
+</html>
