@@ -26,7 +26,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const howToPlayScene = document.getElementById("howToPlayScene");
   const howtoCandles = document.getElementById("howtoCandles");
-  const howtoStartPrompt = document.getElementById("howtoStartPrompt");
 
   const warningScene = document.getElementById("warningScene");
   const warningCandelfireImg = document.getElementById("warningCandelfireImg");
@@ -427,7 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (howToPlayScene) {
-      howToPlayScene.classList.remove("is-active");
+      howToPlayScene.classList.remove("is-active", "is-revealed");
     }
 
     if (howtoCandles) {
@@ -673,6 +672,7 @@ document.addEventListener("DOMContentLoaded", () => {
     timers.push(
       setTimeout(() => {
         if (howToPlayScene) {
+          howToPlayScene.classList.remove("is-revealed");
           howToPlayScene.classList.add("is-active");
           startCandleDemoLoop();
         }
@@ -709,22 +709,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // 綁定開場到警告頁的按鈕、角色、教學互動事件。
   playIntroSequence();
 
-  // 首頁入口按鈕：滑鼠懸停時點亮燭火
-  enterText.addEventListener("mouseenter", () => {
-    candelSvg.classList.add("is-boosted");
-  });
-
-  // 首頁入口按鈕：滑鼠離開時恢復靜態燭火
-  enterText.addEventListener("mouseleave", () => {
-    if (!isTransitioning) {
-      candelSvg.classList.remove("is-boosted");
-    }
+  const flameHits = candelSvg.querySelectorAll(".flame-hit");
+  [enterText, ...flameHits].forEach((target) => {
+    target.addEventListener("mouseenter", () => {
+      candelSvg.classList.add("is-boosted");
+    });
+    target.addEventListener("mouseleave", () => {
+      if (!isTransitioning) {
+        candelSvg.classList.remove("is-boosted");
+      }
+    });
   });
 
   // 首頁入口按鈕：點擊進入角色選擇頁
   enterText.addEventListener("click", (e) => {
     e.stopPropagation();
     enterCharacterPage();
+  });
+
+  flameHits.forEach((flame) => {
+    flame.addEventListener("click", (e) => {
+      if (!candelSvg.classList.contains("is-lit")) return;
+      e.stopPropagation();
+      enterCharacterPage();
+    });
   });
 
   // 開場頁空白處點擊可重新播放 intro 動畫
@@ -770,27 +778,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 第五頁：點擊任意蠟燭可手動切換熄滅/點燃（不觸發切頁）
+  // 第五頁：點擊蠟燭可手動切換熄滅/點燃
   if (howtoCandles) {
     howtoCandles.querySelectorAll(".mini-candle").forEach((candle) => {
       candle.addEventListener("click", (e) => {
-        e.stopPropagation();
-        candle.classList.toggle("is-out");
+        if (e.button === 0 && howToPlayScene.classList.contains("is-active")) {
+          candle.classList.toggle("is-out");
+        }
       });
     });
   }
 
-  // 第五頁提示區：點擊後進入警告頁
-  if (howtoStartPrompt) {
-    howtoStartPrompt.addEventListener("click", (e) => {
-      e.stopPropagation();
-      enterWarningPage();
-    });
-  }
-
+  // 第一次點擊顯示全部內容，第二次點擊進入警告頁。
   if (howToPlayScene) {
     howToPlayScene.addEventListener("click", (e) => {
-      if (e.button === 0) {
+      if (e.button !== 0 || !howToPlayScene.classList.contains("is-active")) return;
+      if (!howToPlayScene.classList.contains("is-revealed")) {
+        howToPlayScene.classList.add("is-revealed");
+      } else {
         enterWarningPage();
       }
     });
@@ -3015,22 +3020,21 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const endingDetails = {
-    prison: { action: '接受判決 ▸', result: '結局一：信任崩解。' },
-    escape: { action: '逃離現場 ▸', result: '結局二：逃離告解室。' },
-    concealed: { action: '離開告解室 ▸', result: '結局三：無人識破。' }
+    prison: { result: '結局一：信任崩解。' },
+    escape: { result: '結局二：逃離告解室。' },
+    concealed: { result: '結局三：無人識破。' }
   };
 
   for (const root of scenes) {
     const name = root.dataset.ending;
     const find = id => root.querySelector('#' + name + '-' + id);
     const lines = [...root.querySelectorAll('.dialogue')];
-    const advance = find('advance');
     const soundButton = find('sound');
     const verdict = root.querySelector('.verdict');
     const status = find('status');
     // 修改三個 .dialogue 的 data-text 即可更換對話。
     let index = -1, state = 'ready', chars = [], cursor = 0;
-    let typingTimer, closeTimer, verdictTimer, departTimer, fireTimer, railTimer;
+    let typingTimer, nextTimer, closeTimer, verdictTimer, departTimer, fireTimer, railTimer;
     const voice = () => {
       if (!soundOn || !audio || audio.state !== 'running') return;
       const oscillator = audio.createOscillator(), gain = audio.createGain();
@@ -3057,7 +3061,7 @@ document.addEventListener("DOMContentLoaded", () => {
       line.querySelector('span').textContent = line.dataset.text;
       line.classList.remove('is-speaking'); state = 'waiting';
       status.textContent = line.dataset.text;
-      advance.textContent = index === lines.length - 1 ? endingDetails[name].action : '繼續 ▸';
+      nextTimer = setTimeout(next, Math.max(1800, chars.length * 120));
     }
     function typeNext() {
       if (state !== 'typing') return;
@@ -3140,10 +3144,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function next() {
       if (state === 'closing' || state === 'ended') return;
-      if (state === 'typing') { finishLine(); return; }
+      if (state === 'typing') return;
       if (index === lines.length - 1) {
         state = 'closing';
-        advance.hidden = true;
         if (name === 'prison') closePrison();
         else if (name === 'escape') playEscape();
         else leaveConfession();
@@ -3153,19 +3156,22 @@ document.addEventListener("DOMContentLoaded", () => {
       if (name === 'concealed') root.dataset.dialogueStep = String(index + 1);
       const line = lines[index]; chars = Array.from(line.dataset.text);
       line.classList.add('is-visible', 'is-speaking');
-      advance.textContent = '顯示整句 ▸';
       if (reduced.matches || !chars.length) finishLine(); else typeNext();
     }
-    function reset(focus = true) {
-      [typingTimer, closeTimer, verdictTimer, departTimer, fireTimer].forEach(clearTimeout);
+    function reset() {
+      [typingTimer, nextTimer, closeTimer, verdictTimer, departTimer, fireTimer].forEach(clearTimeout);
       clearInterval(railTimer);
       index = -1; state = 'ready';
       delete root.dataset.dialogueStep;
       root.classList.remove('is-concealed', 'is-traveling', 'is-passing-shadow', 'is-empty', 'is-departed', 'is-burning', 'is-exploding', 'is-closing', 'is-locked');
       verdict.classList.remove('is-visible'); verdict.inert = true;
       lines.forEach(line => {line.classList.remove('is-visible', 'is-speaking');line.querySelector('span').textContent = '';});
-      advance.hidden = false; advance.textContent = '開始結局 ▸';status.textContent = '';
-      if (focus) advance.focus({preventScroll: true});
+      status.textContent = '';
+    }
+    function start() {
+      reset();
+      soundButton.focus({preventScroll: true});
+      next();
     }
     soundButton.addEventListener('click', async () => {
       if (soundOn) {soundOn = false;} else {
@@ -3177,10 +3183,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       updateSound();
     });
-    advance.addEventListener('click', next);
-    root.addEventListener('click', event => {if (!event.target.closest('button') && state !== 'ready') next();});
-    find('replay').addEventListener('click', () => reset());
-    controllers.set(name, { next, reset, soundButton });
+    find('replay').addEventListener('click', start);
+    root.querySelector('.back-to-intro').addEventListener('click', () => window.location.reload());
+    controllers.set(name, { start, reset, soundButton });
     const fire = root.querySelector('.starfire');
     if (fire) {
       for (const sheet of fire.querySelectorAll('.fire-sheet')) {
@@ -3245,17 +3250,10 @@ document.addEventListener("DOMContentLoaded", () => {
     endingScene.querySelector('#escape-character-art').setAttribute('href', `./images/${characterFolder}/PC_sit.PNG`);
     endingScene.querySelector('.concealed-reveal').src = `./images/${characterFolder}/PC_left.PNG`;
     endingScene.querySelector('.concealed-prayer').src = `./images/${characterFolder}/PC_right.PNG`;
-    if (active !== null) controllers.get(active).reset(false);
+    if (active !== null) controllers.get(active).reset();
     active = remaining <= 1 ? 'prison' : remaining < 7 ? 'escape' : 'concealed';
     for (const scene of scenes) scene.hidden = scene.dataset.ending !== active;
     endingScene.classList.add('is-active');
-    controllers.get(active).reset();
-  });
-
-  document.addEventListener('keydown', event => {
-    if (!endingScene.classList.contains('is-active') || event.code !== 'Space' || event.repeat ||
-        event.target.closest('button, input, textarea, select, [contenteditable]')) return;
-    event.preventDefault();
-    controllers.get(active).next();
+    controllers.get(active).start();
   });
 })();

@@ -130,6 +130,7 @@
                             <path fill="url(#flameBody)" d="M 136 52 C 143 63 144 73 136 80 C 128 73 129 63 136 52 Z" />
                             <path fill="#fffbe6" d="M 136 64 C 139.5 70 140 75 136 79 C 132 75 132.5 70 136 64 Z" />
                         </g>
+                        <circle class="flame-hit" cx="136" cy="66" r="24" fill="transparent" aria-hidden="true" />
                     </g>
 
                     <g class="candle-unit candle-center">
@@ -138,6 +139,7 @@
                             <path fill="url(#flameBody)" d="M 250 -17 C 258 -4 259 7 250 15 C 241 7 242 -4 250 -17 Z" />
                             <path fill="#fffbe6" d="M 250 -3 C 254 4 254.5 10 250 14 C 245.5 10 246 4 250 -3 Z" />
                         </g>
+                        <circle class="flame-hit" cx="250" cy="-1" r="24" fill="transparent" aria-hidden="true" />
                     </g>
 
                     <g class="candle-unit candle-right">
@@ -148,6 +150,7 @@
                             <path fill="#fffbe6"
                                 d="M 363.5 61 C 367 67 367.5 72 363.5 76 C 359.5 72 360 67 363.5 61 Z" />
                         </g>
+                        <circle class="flame-hit" cx="363.5" cy="63" r="24" fill="transparent" aria-hidden="true" />
                     </g>
                 </g>
             </svg>
@@ -692,7 +695,7 @@
     <div class="dust" aria-hidden="true"></div>
     <section class="dialogues" aria-label="神父的最後告解">
       <p class="dialogue" data-text="很抱歉。"><span></span></p>
-      <p class="dialogue" data-text="我對您已沒有信任。"><span></span></p>
+      <p class="dialogue" data-text="我無法信任您。"><span></span></p>
       <p class="dialogue" data-text="祝您在監獄的生活愉快。"><span></span></p>
     </section>
     <div class="prison" aria-hidden="true">
@@ -704,14 +707,15 @@
       <p class="eyebrow">ENDING 01 · 信任崩解</p>
       <h1 id="prison-endingTitle">告解，到此為止。</h1>
       <p class="verdict-copy">信任的燭火將盡。<br>鐵門之後，只剩下你自己的呼吸。</p>
-      <div class="ending-actions"><button id="prison-replay" type="button">重播第一種結局</button></div>
+      <div class="ending-actions">
+        <button id="prison-replay" type="button">重播第一種結局</button>
+        <button class="back-to-intro" type="button">回到開場</button>
+      </div>
     </section>
     <p id="prison-status" class="sr-only" role="status" aria-live="polite"></p>
     <div class="controls">
-      <button id="prison-advance" type="button">開始結局 <span aria-hidden="true">▸</span></button>
       <button id="prison-sound" type="button" aria-pressed="false">音效：關</button>
     </div>
-    <p class="help">點擊繼續／空白鍵 · 打字中再點一次可顯示整句</p>
   </section>
   <section class="ending" data-ending="escape" hidden aria-label="逃跑結局">
     <div class="escape-camera" aria-hidden="true">
@@ -749,9 +753,9 @@
     <div class="light" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true"></div>
     <section class="dialogues" aria-label="逃離之後的獨白">
-      <p class="dialogue" data-text="我們這麼優秀！！！"><span></span></p>
-      <p class="dialogue" data-text="怎麼會被發現呢？"><span></span></p>
-      <p class="dialogue" data-text="只好換個新的目標了～"><span></span></p>
+      <p class="dialogue" data-text="嘖、真是可惜"><span></span></p>
+      <p class="dialogue" data-text="看來這裡已經不適合再留下"><span></span></p>
+      <p class="dialogue" data-text="至於下一站————呵、我會期待的"><span></span></p>
     </section>
     <div class="vignette" aria-hidden="true"></div>
     <section class="verdict" aria-labelledby="escape-endingTitle" inert>
@@ -760,14 +764,13 @@
       <p class="verdict-copy">列車消失在火光中。<br>你和行李早已不在車上。</p>
       <div class="ending-actions">
         <button id="escape-replay" type="button">重播第二種結局</button>
+        <button class="back-to-intro" type="button">回到開場</button>
       </div>
     </section>
     <p id="escape-status" class="sr-only" role="status" aria-live="polite"></p>
     <div class="controls">
-      <button id="escape-advance" type="button">開始結局 <span aria-hidden="true">▸</span></button>
       <button id="escape-sound" type="button" aria-pressed="false">音效：關</button>
     </div>
-    <p class="help">點擊繼續／空白鍵 · 打字中再點一次可顯示整句</p>
   </section>
 
   <section class="ending concealed-ending" data-ending="concealed" hidden aria-label="身分未被識破的結局">
@@ -779,9 +782,9 @@
     </div>
     <div class="dust" aria-hidden="true"></div>
     <section class="dialogues" aria-label="主角的內心獨白">
-      <p class="dialogue" data-text="哈！哈！竟然沒有發現我們的身份"><span></span></p>
-      <p class="dialogue" data-text="我們真棒！恭喜成為我們的斧下亡魂！"><span></span></p>
-      <p class="dialogue" data-text="我們真是天生的殺人犯！"><span></span></p>
+      <p class="dialogue" data-text="一切如同計畫一般"><span></span></p>
+      <p class="dialogue" data-text="恭喜成為我們的斧下亡魂"><span></span></p>
+      <p class="dialogue" data-text="……親愛的神父"><span></span></p>
     </section>
     <div class="concealed-curtain" aria-hidden="true"></div>
     <section class="verdict" aria-labelledby="concealed-endingTitle" inert>
@@ -790,14 +793,13 @@
       <p class="verdict-copy">你走出告解室，沒有人認出你的真面目。</p>
       <div class="ending-actions">
         <button id="concealed-replay" type="button">重播第三種結局</button>
+        <button class="back-to-intro" type="button">回到開場</button>
       </div>
     </section>
     <p id="concealed-status" class="sr-only" role="status" aria-live="polite"></p>
     <div class="controls">
-      <button id="concealed-advance" type="button">開始結局 ▸</button>
       <button id="concealed-sound" type="button" aria-pressed="false">音效：關</button>
     </div>
-    <p class="help">點擊繼續／空白鍵 · 打字中再點一次可顯示整句</p>
   </section>
 
 </div>

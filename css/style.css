@@ -105,6 +105,11 @@ body {
     opacity: 1;
 }
 
+.svg-candel.is-lit .flame-hit {
+    pointer-events: all;
+    cursor: pointer;
+}
+
 .svg-candel.is-boosted .candles-glow-group {
     filter: brightness(1.25) drop-shadow(0 0 14px rgba(255, 210, 120, 0.72));
 }
@@ -208,7 +213,8 @@ body {
         text-shadow 0.3s ease;
 }
 
-.enter-text.is-visible:hover {
+.enter-text.is-visible:hover,
+.svg-candel.is-boosted ~ .enter-text.is-visible {
     color: #ffd88a;
     text-shadow: 0 0 16px rgba(255, 206, 112, 0.55);
 }
@@ -1473,6 +1479,11 @@ body {
     transform: translateY(0);
 }
 
+.how-to-scene.is-active.is-revealed,
+.how-to-scene.is-active.is-revealed :is(.howto-title, .howto-desc, .howto-arrow, .bubble-left, .bubble-right, .mini-candle, .option-pill, .howto-footer) {
+    transition: none;
+}
+
 .mouse-icon-wrap {
     position: relative;
     width: clamp(46px, 4.6vw, 62px);
@@ -2071,6 +2082,7 @@ body {
     gap: 12px 24px;
     background: linear-gradient(180deg, rgba(33, 37, 85, .82), rgba(10, 7, 45, .94));
     border: 1px solid rgba(186, 188, 221, .25);
+    border-top-right-radius: 10% 27%;
     opacity: 0;
     transition: opacity .35s ease;
     pointer-events: none;
@@ -2079,6 +2091,16 @@ body {
 .question-choice-panel.is-ready {
     opacity: 1;
     pointer-events: auto;
+}
+
+.question-choice-panel::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    inset: -56.1% -6.6% -31.6% -6.5%;
+    background: url("../images/bg/Decoration.png") center / 100% 100% no-repeat;
+    filter: grayscale(1) brightness(.78);
+    pointer-events: none;
 }
 
 .question-scoreboard {
@@ -2176,7 +2198,7 @@ body {
     .question-choice-panel {
         left: 5%;
         right: 5%;
-        padding: 3%;
+        padding: 3% 7%;
         gap: 7px;
     }
 
@@ -4041,11 +4063,13 @@ body {
 .dust{position:absolute;inset:0;pointer-events:none}
 .dust i{position:absolute;width:3px;height:3px;background:#e0d5ff;border-radius:50%;opacity:0;animation:floatDust var(--duration) var(--delay) linear infinite}
 .dialogues{position:absolute;z-index:2;right:2.2%;top:47%;width:46%;display:grid;gap:clamp(16px,4.5vh,50px)}
-.dialogue{position:relative;margin:0;min-height:clamp(45px,9vh,100px);display:flex;align-items:center;justify-content:center;padding:14px 20px 14px 30px;isolation:isolate;opacity:0;transform:translateX(30px);transition:opacity .65s,transform .8s cubic-bezier(.2,.7,.2,1);font-weight:700;font-size:clamp(13px,1.95vw,28px);letter-spacing:.2em;line-height:1.75;text-align:center}
+.dialogue{position:relative;justify-self:start;max-width:100%;margin:0;min-height:clamp(45px,9vh,100px);display:grid;align-content:center;align-items:start;padding:14px 20px 14px 30px;isolation:isolate;opacity:0;transform:translateX(30px);transition:opacity .65s,transform .8s cubic-bezier(.2,.7,.2,1);font-weight:700;font-size:clamp(13px,1.95vw,28px);letter-spacing:.2em;line-height:1.75;text-align:left;overflow-wrap:anywhere}
 .dialogue::before{content:"";position:absolute;inset:0;background:#7775ab;z-index:-1;clip-path:polygon(7% 3%,20% 7%,39% 4%,66% 6%,83% 3%,98% 0,99% 20%,98% 43%,99% 70%,98% 97%,77% 94%,57% 98%,30% 94%,14% 97%,9% 88%,6% 68%,0 77%,5% 57%,6% 28%)}
-.dialogue:nth-child(2){margin-left:6%;margin-right:1%}.dialogue:nth-child(3){margin-left:9%;margin-right:-1%}
+.dialogue::after{content:attr(data-text);visibility:hidden;grid-area:1/1}
+.dialogue span{grid-area:1/1;min-width:0}
+.dialogue:nth-child(2){margin-left:6%;margin-right:1%}.dialogue:nth-child(3){margin-left:9%}
 .dialogue.is-visible{opacity:1;transform:translateX(0)}
-.dialogue.is-speaking span::after{content:"";display:inline-block;width:2px;height:1em;background:currentColor;vertical-align:-.1em;margin-left:5px;animation:cursorBlink .8s steps(1) infinite}
+.dialogue.is-speaking span::after{content:"";position:absolute;display:inline-block;width:2px;height:1em;background:currentColor;vertical-align:-.1em;margin-left:5px;animation:cursorBlink .8s steps(1) infinite}
 .prison{position:absolute;inset:-2px;z-index:4;pointer-events:none;perspective:900px}
 .gate{position:absolute;top:0;width:50%;height:100%;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(16.666% - 14px),#080a11 calc(16.666% - 14px),#414350 calc(16.666% - 10px),#131520 calc(16.666% - 5px),#070811 16.666%);border-block:clamp(14px,3vh,28px) solid #151621;box-shadow:inset 0 1px #67647c,0 0 35px #0006;transition:transform 1.65s cubic-bezier(.6,0,.3,1)}
 .gate::before,.gate::after{content:"";position:absolute;left:0;right:0;height:16px;background:linear-gradient(#53505f,#171722 35%,#080912);box-shadow:0 5px 10px #0007}.gate::before{top:23%}.gate::after{bottom:20%}
@@ -4060,13 +4084,13 @@ body {
 .verdict{position:absolute;z-index:6;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#0d10255c;opacity:0;visibility:hidden;transition:opacity 1.8s}
 .verdict.is-visible{opacity:1;visibility:visible}.eyebrow{font-size:12px;letter-spacing:.35em;color:#b1a4ce}.verdict h1{font-size:clamp(25px,4vw,54px);font-weight:400;letter-spacing:.16em;margin:20px 0}.verdict-copy{color:#c2bed0;font-size:14px;line-height:2.2;letter-spacing:.12em}
 .verdict button,.controls button{border:1px solid #c7bdd752;background:#24233d9c;border-radius:30px;padding:10px 22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.verdict button{margin-top:22px}
-.controls{position:absolute;right:22px;bottom:18px;z-index:7;display:flex;gap:10px}.controls button{font-size:12px}.help{position:absolute;left:22px;bottom:17px;z-index:6;color:#d7cee399;font-size:11px;letter-spacing:.08em}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.controls{position:absolute;right:22px;top:18px;z-index:7;display:flex;gap:10px}.controls button{font-size:12px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @keyframes portraitIn{from{opacity:0;transform:scale(1.12)}to{opacity:1;transform:scale(1.045)}}
 @keyframes lightDrift{to{transform:translateX(8%) rotate(4deg);opacity:.45}}
 @keyframes floatDust{0%{transform:translate(0,35px);opacity:0}25%{opacity:.3}80%{opacity:.12}100%{transform:translate(25px,-100px);opacity:0}}
 @keyframes cursorBlink{50%{opacity:0}}
 @keyframes gateImpact{0%,100%{transform:translate(0)}20%{transform:translate(-5px,3px)}45%{transform:translate(4px,-2px)}70%{transform:translate(-2px,1px)}}
-@media(max-aspect-ratio:1/1){.portrait img{object-position:30% center}.dialogues{top:47%;right:4%;width:86%;gap:20px}.dialogue{font-size:clamp(14px,3.4vw,21px);min-height:58px;background:transparent}.help{bottom:72px;left:0;width:100%;text-align:center}.controls{left:0;right:0;justify-content:center}.verdict{padding:24px}}
+@media(max-aspect-ratio:1/1){.portrait img{object-position:30% center}.dialogues{top:47%;right:4%;width:86%;gap:20px}.dialogue{font-size:clamp(14px,3.4vw,21px);min-height:58px;background:transparent}.verdict{padding:24px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.portrait{opacity:1}.dust,.light{display:none}}
 
 .ending-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin:22px 20px 0}.ending-actions button{margin:0}
@@ -4076,7 +4100,7 @@ body {
 .character{transform-origin:27% 83%;animation:carSway 5.6s ease-in-out infinite alternate}
 .seat{animation:seatSway 4.6s ease-in-out infinite alternate}
 [data-ending="escape"] .dialogues{top:13%;right:7%;width:46%;gap:clamp(18px,5vh,58px)}
-[data-ending="escape"] .dialogue:nth-child(2){margin-left:7%}[data-ending="escape"] .dialogue:nth-child(3){margin-left:10%;margin-right:-5%}
+[data-ending="escape"] .dialogue:nth-child(2){margin-left:7%}[data-ending="escape"] .dialogue:nth-child(3){margin-left:10%}
 .blackout{position:absolute;inset:0;z-index:5;pointer-events:none;background:#090a20;opacity:0;transition:opacity .7s}
 .ending.is-departed .escape-camera{animation:none;opacity:0}
 @keyframes escapeEnter{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:scale(1.025)}}
@@ -4479,5 +4503,4 @@ body {
   .concealed-art .concealed-wolf { height: 62%; left: -18%; bottom: 16%; }
   .concealed-art .concealed-reveal { height: 69%; left: -23%; }
   .concealed-ending .dialogues { right: 6%; width: 88%; bottom: 24%; }
-  .concealed-ending .help { bottom: 62px; }
 }
