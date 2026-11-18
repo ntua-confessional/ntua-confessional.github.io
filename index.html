@@ -183,6 +183,8 @@
             </figure>
         </div>
 
+       
+
         <!-- 最下方：點擊選擇性別提示框 -->
         <div class="gender-bar" id="genderBar" aria-label="點擊選擇性別">
             <span class="gender-symbol symbol-male" aria-hidden="true">
@@ -510,6 +512,320 @@
             </div>
         </div>
     </section>
+<!-- 第七頁：五題互動系統  -->
+<section class="question-scene" id="questionScene" aria-label="告解互動題目">
+    <div class="question-stage">
+        <!-- 第七頁背景圖片 -->
+        <img class="question-room-bg" src="./images/bg/bg_confessional.PNG" alt="" aria-hidden="true" />
+        <!-- 左側為神父，右側玩家立繪會依前面選擇的角色切換 -->
+        <img class="question-npc question-npc-left" id="questionNpcLeft" src="./images/bg/F_close.PNG"
+            alt="左側NPC" />
+        <img class="question-npc question-npc-right" id="questionNpcRight" src="./images/PC_B/PC_close.PNG"
+            alt="右側NPC" />
+        <!-- 左右對話區：由JS依序產生對話泡泡 -->
+        <div class="question-dialogues" id="questionDialogues" aria-live="polite" tabindex="0"
+            aria-label="對話內容，可上下捲動"></div>
+        <!-- 四個選項：由JS依題目更換文字 -->
+        <div class="question-choice-panel" id="questionChoicePanel">
+            <div class="question-scoreboard" id="questionScoreboard" role="img"
+                aria-label="蠟燭記分板，七根燭火全亮" aria-live="polite">
+                <img class="question-scoreboard-art" src="./images/bg/IMG_8976.PNG" alt="" />
+            </div>
+            <button type="button" class="question-choice"></button>
+            <button type="button" class="question-choice"></button>
+            <button type="button" class="question-choice"></button>
+            <button type="button" class="question-choice"></button>
+        </div>
+        <!-- 五題完成後的提示，以及重新開始題目的按鈕。 -->
+        <div class="question-finish" id="questionFinish" hidden>
+            <p>五題已完成</p>
+            <button type="button" id="questionRestartBtn">重新開始題目</button>
+        </div>
+        <p class="question-continue-hint">✧　點擊神父，聆聽下一段告解　✧</p>
+    </div>
+</section>
+
+<!-- 第七頁特殊環節 心跳前導 CG：完成對話後點擊提示按鈕進入心跳檢定。 -->
+<div class="rhythm-intro-scene" id="rhythmIntroScene" role="group"
+    aria-label="特殊環節前導畫面">
+    <img class="rhythm-intro-bg" src="./images/bg/bg_desk.PNG" alt="" aria-hidden="true" />
+    <img class="rhythm-intro-candles" src="./images/bg/candle_5.PNG" alt="" aria-hidden="true" />
+    <span class="rhythm-intro-dialogue-stack" aria-live="polite">
+        <span class="rhythm-intro-dialogue-box" id="rhythmIntroDialogueBox1" role="group"
+            aria-label="神父對話">
+            <span class="rhythm-intro-dialogue-text" id="rhythmIntroDialogueText1"></span>
+            <span class="dialogue-next-hint" id="rhythmIntroDialogueNextHint">點擊繼續 ▾</span>
+        </span>
+        <span class="rhythm-intro-dialogue-box" id="rhythmIntroDialogueBox2" role="group"
+            aria-label="神父對話">
+            <span class="rhythm-intro-dialogue-text" id="rhythmIntroDialogueText2"></span>
+        </span>
+    </span>
+    <span class="rhythm-intro-hint-1" id="rhythmIntroHint2">剩下五根蠟燭</span>
+    <button type="button" class="rhythm-intro-hint-2" id="rhythmIntroHint">
+        點擊繼續
+    </button>
+</div>
+
+<!-- 第七頁特殊環節：累計扣兩分時啟動心跳檢定 -->
+
+<section class="rhythm-scene" id="rhythmScene" aria-label="心跳節奏檢定" data-gender="male">
+    <div class="rhythm-dialogue-box" id="rhythmDialogueBox" role="group" aria-label="神父對話框">
+        <p class="rhythm-dialogue-text" id="rhythmDialogueText"></p>
+        <span class="dialogue-next-hint" id="dialogueNextHint">點擊繼續 ▾</span>
+    </div>
+
+    <div class="rhythm-track-area is-standby" id="rhythmTrackArea">
+        <div class="rhythm-wave-status" aria-label="心跳穩定進度">
+            <span class="wave-label" id="rhythmWaveLabel">等待對話結束…</span>
+            <div class="wave-pips" id="rhythmWavePips">
+                <span class="wave-pip is-current"></span>
+                <span class="wave-pip"></span>
+                <span class="wave-pip"></span>
+                <span class="wave-pip"></span>
+            </div>
+        </div>
+        <div class="rhythm-bar" id="rhythmBar">
+            <div class="rhythm-red-zone" id="rhythmRedZone">
+                <span class="zone-bound bound-left" aria-hidden="true"></span>
+                <span class="zone-bound bound-right" aria-hidden="true"></span>
+            </div>
+            <span class="rhythm-beat-flash" id="rhythmBeatFlash" aria-hidden="true"></span>
+        </div>
+        <div class="rhythm-arrow-track">
+            <div class="rhythm-arrow" id="rhythmArrow" aria-hidden="true"></div>
+        </div>
+        <div class="rhythm-judgment" id="rhythmJudgment" aria-live="polite"></div>
+    </div>
+
+    <div class="rhythm-character-wrap" id="rhythmCharacterWrap">
+        <img class="rhythm-character-img is-black-bg" id="rhythmCharacterImg"
+            src="./images/PC_B/PC_heart.PNG" alt="角色按住胸口" />
+        <button type="button" class="rhythm-heart-btn" id="rhythmHeartBtn" aria-label="點擊紅心穩定心跳"
+            disabled>
+            <span class="heart-shockwave" aria-hidden="true"></span>
+            <svg class="heart-svg" viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path class="heart-shape"
+                    d="M 60 98 C 60 98 12 68 12 35 C 12 18 25 8 40 8 C 50 8 57 14 60 21 C 63 14 70 8 80 8 C 95 8 108 18 108 35 C 108 68 60 98 60 98 Z" />
+            </svg>
+            <span class="heart-label">點擊</span>
+        </button>
+    </div>
+
+    <div class="rhythm-candles-wrap" id="rhythmCandlesWrap" aria-label="燭火狀態">
+        <img class="rhythm-candles-img" id="rhythmCandlesImg"
+            src="./images/bg/IMG_8976.PNG" alt="蠟燭" />
+    </div>
+
+    <div class="rhythm-instruction-box" id="rhythmInstructionBox">
+        <p class="rhythm-instruction-text" id="rhythmInstructionText"></p>
+        <button type="button" class="rhythm-action-btn" id="rhythmActionBtn" hidden>繼續對話</button>
+    </div>
+</section>
+
+<!-- 第七頁狡辯環節前導 CG：使用剩下兩根蠟燭的畫面。 -->
+<div class="rhythm-intro-scene" id="excuseIntroScene" role="group"
+    aria-label="狡辯環節前導畫面">
+    <img class="rhythm-intro-bg" src="./images/bg/bg_desk.PNG" alt="" aria-hidden="true" />
+    <img class="rhythm-intro-candles" src="./images/bg/candle_2.PNG" alt="" aria-hidden="true" />
+    <span class="rhythm-intro-dialogue-stack" aria-live="polite">
+        <span class="rhythm-intro-dialogue-box" id="excuseIntroDialogueBox1" role="group"
+            aria-label="神父對話">
+            <span class="rhythm-intro-dialogue-text" id="excuseIntroDialogueText1"></span>
+            <span class="dialogue-next-hint" id="excuseIntroDialogueNextHint">點擊繼續 ▾</span>
+        </span>
+        <span class="rhythm-intro-dialogue-box" id="excuseIntroDialogueBox2" role="group"
+            aria-label="神父對話">
+            <span class="rhythm-intro-dialogue-text" id="excuseIntroDialogueText2"></span>
+        </span>
+    </span>
+    <span class="rhythm-intro-hint-1">剩下兩根蠟燭</span>
+    <button type="button" class="rhythm-intro-hint-2" id="excuseIntroHint">
+        點擊繼續
+    </button>
+</div>
+
+<!-- 第七頁特殊環節：依所選角色進入狡辯環節。 -->
+<section class="excuse-scene" id="excuseScene" aria-label="狡辯環節"
+    data-gender="male" data-asset-base="./images/PC_B/">
+    <div class="excuse-hud" aria-label="狡辯倒數">
+        <div class="hud-card hud-timer" id="hudTimerCard">
+            <span class="hud-label">狡辯時限</span>
+            <span class="hud-value" id="timerValueText">5.0s</span>
+        </div>
+    </div>
+
+    <div class="dialogue-column dialogue-column-left" id="leftDialogueColumn" aria-label="神父詰問"></div>
+    <div class="dialogue-column dialogue-column-center" id="centerDialogueColumn" aria-label="教徒狡辯"></div>
+    <div class="dialogue-control-hint" id="dialogueControlHint">點擊畫面或按空白鍵繼續對話 ▾</div>
+
+    <div class="excuse-character-wrap" id="excuseCharacterWrap">
+        <img class="excuse-character-img is-black-bg" id="excuseCharacterImg"
+            src="./images/PC_B/PC_talk.PNG" alt="男角色神情" />
+    </div>
+
+    <div class="excuse-candles-wrap" id="excuseCandlesWrap" aria-label="燭火狀態">
+        <img class="excuse-candles-img" id="excuseCandlesImg"
+            src="./images/bg/IMG_8976.PNG" alt="七支蠟燭" />
+    </div>
+
+    <div class="excuse-feedback-banner" id="excuseFeedbackBanner" aria-live="polite"></div>
+
+    <div class="excuse-typing-box is-standby" id="excuseTypingBox" aria-label="快速打字母狡辯區">
+        <div class="typing-timer-track" aria-hidden="true">
+            <div class="typing-timer-fill" id="typingTimerFill"></div>
+        </div>
+        <div class="typing-header-bar">
+            <span class="typing-status-badge" id="typingStatusBadge">等待對話結束…</span>
+            <button type="button" class="excuse-action-btn" id="excuseActionBtn" hidden>繼續告解</button>
+        </div>
+        <div class="typing-letters-grid" id="typingLettersGrid"></div>
+    </div>
+</section>
+
+
+<!-- 第八頁：結局畫面。 -->
+<div class="ending-scene" id="endingScene" aria-label="故事結局">
+<section class="ending" data-ending="prison" hidden aria-label="監獄結局">
+    <div class="portrait" aria-hidden="true"><img src="./images/bg/endding-1.PNG" alt="神父神情"></div>
+    <div class="light" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <section class="dialogues" aria-label="神父的最後告解">
+      <p class="dialogue" data-text="很抱歉。"><span></span></p>
+      <p class="dialogue" data-text="我對您已沒有信任。"><span></span></p>
+      <p class="dialogue" data-text="祝您在監獄的生活愉快。"><span></span></p>
+    </section>
+    <div class="prison" aria-hidden="true">
+      <div class="gate gate-left"><i class="lock"></i></div>
+      <div class="gate gate-right"></div>
+    </div>
+    <div class="vignette" aria-hidden="true"></div>
+    <section class="verdict" aria-labelledby="prison-endingTitle" inert>
+      <p class="eyebrow">ENDING 01 · 信任崩解</p>
+      <h1 id="prison-endingTitle">告解，到此為止。</h1>
+      <p class="verdict-copy">信任的燭火將盡。<br>鐵門之後，只剩下你自己的呼吸。</p>
+      <div class="ending-actions"><button id="prison-replay" type="button">重播第一種結局</button></div>
+    </section>
+    <p id="prison-status" class="sr-only" role="status" aria-live="polite"></p>
+    <div class="controls">
+      <button id="prison-advance" type="button">開始結局 <span aria-hidden="true">▸</span></button>
+      <button id="prison-sound" type="button" aria-pressed="false">音效：關</button>
+    </div>
+    <p class="help">點擊繼續／空白鍵 · 打字中再點一次可顯示整句</p>
+  </section>
+  <section class="ending" data-ending="escape" hidden aria-label="逃跑結局">
+    <div class="escape-camera" aria-hidden="true">
+      <div class="carriage layer"><img src="./images/bg/2-bg-bseat.PNG" alt="車廂座位後"></div>
+      <svg class="escape-art-defs" width="0" height="0" aria-hidden="true">
+        <defs>
+          <image id="escape-character-art" width="1920" height="1080" href="./images/PC_B/PC_sit.PNG"/>
+          <clipPath id="escape-person-clip"><path d="M0 0H805V1080H0Z"/></clipPath>
+          <clipPath id="escape-bag-clip"><path d="M805 0H1920V1080H805Z"/></clipPath>
+        </defs>
+      </svg>
+      <div class="luggage layer">
+        <svg viewBox="0 0 1920 1080" aria-hidden="true"><use href="#escape-character-art" clip-path="url(#escape-bag-clip)"/></svg>
+      </div>
+      <div class="character layer">
+        <svg viewBox="0 0 1920 1080" aria-hidden="true"><use href="#escape-character-art" clip-path="url(#escape-person-clip)"/></svg>
+      </div>
+      <div class="seat layer"><img src="./images/bg/2-bg-seat.PNG" alt="車廂座位前"></div>
+    </div>
+    <div class="passing-shadow" aria-hidden="true"></div>
+    <div class="starfire" aria-hidden="true">
+      <div class="starfire-glow"></div>
+      <div class="starfire-smoke"></div>
+      <div class="starfire-flames">
+        <div class="fire-front fire-front-bottom"><div class="fire-sheet"></div></div>
+      </div>
+      <div class="starfire-sparks"></div>
+      <div class="blast">
+        <div class="blast-light"></div>
+        <div class="blast-ring"></div>
+        <div class="blast-embers"></div>
+      </div>
+    </div>
+    <div class="blackout" aria-hidden="true"></div>
+    <div class="light" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <section class="dialogues" aria-label="逃離之後的獨白">
+      <p class="dialogue" data-text="我們這麼優秀！！！"><span></span></p>
+      <p class="dialogue" data-text="怎麼會被發現呢？"><span></span></p>
+      <p class="dialogue" data-text="只好換個新的目標了～"><span></span></p>
+    </section>
+    <div class="vignette" aria-hidden="true"></div>
+    <section class="verdict" aria-labelledby="escape-endingTitle" inert>
+      <p class="eyebrow">ENDING 02 · 逃離告解室</p>
+      <h1 id="escape-endingTitle">下一站，無人知曉。</h1>
+      <p class="verdict-copy">列車消失在火光中。<br>你和行李早已不在車上。</p>
+      <div class="ending-actions">
+        <button id="escape-replay" type="button">重播第二種結局</button>
+      </div>
+    </section>
+    <p id="escape-status" class="sr-only" role="status" aria-live="polite"></p>
+    <div class="controls">
+      <button id="escape-advance" type="button">開始結局 <span aria-hidden="true">▸</span></button>
+      <button id="escape-sound" type="button" aria-pressed="false">音效：關</button>
+    </div>
+    <p class="help">點擊繼續／空白鍵 · 打字中再點一次可顯示整句</p>
+  </section>
+
+  <section class="ending concealed-ending" data-ending="concealed" hidden aria-label="身分未被識破的結局">
+    <div class="concealed-art" aria-hidden="true">
+      <div class="concealed-beam"></div>
+      <img class="concealed-wolf" src="./images/bg/bg_wolf.PNG" alt="狼">
+      <img class="concealed-reveal" src="./images/PC_B/PC_left.PNG" alt="左側角色">
+      <img class="concealed-prayer" src="./images/PC_B/PC_right.PNG" alt="右側角色">
+    </div>
+    <div class="dust" aria-hidden="true"></div>
+    <section class="dialogues" aria-label="主角的內心獨白">
+      <p class="dialogue" data-text="哈！哈！竟然沒有發現我們的身份"><span></span></p>
+      <p class="dialogue" data-text="我們真棒！恭喜成為我們的斧下亡魂！"><span></span></p>
+      <p class="dialogue" data-text="我們真是天生的殺人犯！"><span></span></p>
+    </section>
+    <div class="concealed-curtain" aria-hidden="true"></div>
+    <section class="verdict" aria-labelledby="concealed-endingTitle" inert>
+      <p class="eyebrow">ENDING 03 · 無人識破</p>
+      <h1 id="concealed-endingTitle">告解結束，祕密仍在。</h1>
+      <p class="verdict-copy">你走出告解室，沒有人認出你的真面目。</p>
+      <div class="ending-actions">
+        <button id="concealed-replay" type="button">重播第三種結局</button>
+      </div>
+    </section>
+    <p id="concealed-status" class="sr-only" role="status" aria-live="polite"></p>
+    <div class="controls">
+      <button id="concealed-advance" type="button">開始結局 ▸</button>
+      <button id="concealed-sound" type="button" aria-pressed="false">音效：關</button>
+    </div>
+    <p class="help">點擊繼續／空白鍵 · 打字中再點一次可顯示整句</p>
+  </section>
+
+</div>
+
+<!-- 共用七根燭火的結構；由 motion.js 複製到記分板、心跳與狡辯畫面。 -->
+<template id="candleSlotsTemplate">
+    <div class="candle-flame-slot slot-1" data-candle-index="0">
+        <span class="slot-glow"></span><span class="slot-flame"></span><span class="slot-smoke"></span>
+    </div>
+    <div class="candle-flame-slot slot-2" data-candle-index="1">
+        <span class="slot-glow"></span><span class="slot-flame"></span><span class="slot-smoke"></span>
+    </div>
+    <div class="candle-flame-slot slot-3" data-candle-index="2">
+        <span class="slot-glow"></span><span class="slot-flame"></span><span class="slot-smoke"></span>
+    </div>
+    <div class="candle-flame-slot slot-4" data-candle-index="3">
+        <span class="slot-glow"></span><span class="slot-flame"></span><span class="slot-smoke"></span>
+    </div>
+    <div class="candle-flame-slot slot-5" data-candle-index="4">
+        <span class="slot-glow"></span><span class="slot-flame"></span><span class="slot-smoke"></span>
+    </div>
+    <div class="candle-flame-slot slot-6" data-candle-index="5">
+        <span class="slot-glow"></span><span class="slot-flame"></span><span class="slot-smoke"></span>
+    </div>
+    <div class="candle-flame-slot slot-7" data-candle-index="6">
+        <span class="slot-glow"></span><span class="slot-flame"></span><span class="slot-smoke"></span>
+    </div>
+</template>
 
     <!-- Parallax.js 視差外掛函式庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/parallax/3.1.0/parallax.min.js"></script>
