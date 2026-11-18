@@ -276,7 +276,7 @@
 
             <p class="briefing-goal" id="briefingGoal">目標:隱藏自己的身分</p>
             <p class="briefing-reminder" id="briefingReminder">
-                請記得紙上的關鍵詞
+                請記得紙上的犯案過程
             </p>
 
             <button type="button" class="briefing-next-btn" id="briefingNextBtn" aria-label="下一步">
@@ -389,8 +389,8 @@
             </div>
 
             <!-- 最下方：滑鼠左鍵點擊動態提示 -->
-            <div class="howto-footer" id="howtoStartPrompt">
-                <div class="mouse-icon-wrap" aria-hidden="true">
+            <button type="button" class="howto-footer" id="howtoStartPrompt">
+                <span class="mouse-icon-wrap" aria-hidden="true">
                     <span class="mouse-click-ring"></span>
                     <svg class="mouse-svg" viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
                         <defs>
@@ -411,9 +411,9 @@
                         <rect x="4" y="4" width="56" height="88" rx="28" ry="28" fill="none" stroke="#6d70a6"
                             stroke-width="3.6" />
                     </svg>
-                </div>
+                </span>
                 <span class="howto-footer-text">左鍵選擇選項/繼續</span>
-            </div>
+            </button>
         </div>
     </section>
 
@@ -510,7 +510,7 @@
                     切記，不要被神父發現你是兇手！
                 </p>
                 <button type="button" class="warning-start-btn" id="startGameBtn">
-                    開始遊戲
+                    進入告解室
                 </button>
             </div>
         </div>
@@ -518,6 +518,7 @@
 <!-- 第七頁：五題互動系統  -->
 <section class="question-scene" id="questionScene" aria-label="告解互動題目">
     <div class="question-stage">
+        <div class="question-embers" id="questionEmbers" aria-hidden="true"></div>
         <!-- 第七頁背景圖片 -->
         <img class="question-room-bg" src="./images/bg/bg_confessional.PNG" alt="" aria-hidden="true" />
         <!-- 左側為神父，右側玩家立繪會依前面選擇的角色切換 -->
@@ -534,10 +535,38 @@
                 aria-label="蠟燭記分板，七根燭火全亮" aria-live="polite">
                 <img class="question-scoreboard-art" src="./images/bg/IMG_8976.PNG" alt="" />
             </div>
-            <button type="button" class="question-choice"></button>
-            <button type="button" class="question-choice"></button>
-            <button type="button" class="question-choice"></button>
-            <button type="button" class="question-choice"></button>
+            <button type="button" class="question-choice">
+                <svg class="question-choice-border" viewBox="0 0 420 65" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="question-choice-border-outer" d="M19 5 H401 L416 32.5 L401 60 H19 L4 32.5 Z" />
+                    <path class="question-choice-border-inner" d="M23 10 H397 L410 32.5 L397 55 H23 L10 32.5 Z" />
+                    <path class="question-choice-border-decoration" d="M4 32.5 L19 23 L34 32.5 L19 42 Z M416 32.5 L401 23 L386 32.5 L401 42 Z" />
+                </svg>
+                <span class="question-choice-text"></span>
+            </button>
+            <button type="button" class="question-choice">
+                <svg class="question-choice-border" viewBox="0 0 420 65" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="question-choice-border-outer" d="M19 5 H401 L416 32.5 L401 60 H19 L4 32.5 Z" />
+                    <path class="question-choice-border-inner" d="M23 10 H397 L410 32.5 L397 55 H23 L10 32.5 Z" />
+                    <path class="question-choice-border-decoration" d="M4 32.5 L19 23 L34 32.5 L19 42 Z M416 32.5 L401 23 L386 32.5 L401 42 Z" />
+                </svg>
+                <span class="question-choice-text"></span>
+            </button>
+            <button type="button" class="question-choice">
+                <svg class="question-choice-border" viewBox="0 0 420 65" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="question-choice-border-outer" d="M19 5 H401 L416 32.5 L401 60 H19 L4 32.5 Z" />
+                    <path class="question-choice-border-inner" d="M23 10 H397 L410 32.5 L397 55 H23 L10 32.5 Z" />
+                    <path class="question-choice-border-decoration" d="M4 32.5 L19 23 L34 32.5 L19 42 Z M416 32.5 L401 23 L386 32.5 L401 42 Z" />
+                </svg>
+                <span class="question-choice-text"></span>
+            </button>
+            <button type="button" class="question-choice">
+                <svg class="question-choice-border" viewBox="0 0 420 65" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="question-choice-border-outer" d="M19 5 H401 L416 32.5 L401 60 H19 L4 32.5 Z" />
+                    <path class="question-choice-border-inner" d="M23 10 H397 L410 32.5 L397 55 H23 L10 32.5 Z" />
+                    <path class="question-choice-border-decoration" d="M4 32.5 L19 23 L34 32.5 L19 42 Z M416 32.5 L401 23 L386 32.5 L401 42 Z" />
+                </svg>
+                <span class="question-choice-text"></span>
+            </button>
         </div>
         <!-- 五題完成後的提示，以及重新開始題目的按鈕。 -->
         <div class="question-finish" id="questionFinish" hidden>
@@ -552,6 +581,20 @@
 <div class="rhythm-intro-scene" id="rhythmIntroScene" role="group"
     aria-label="特殊環節前導畫面">
     <img class="rhythm-intro-bg" src="./images/bg/bg_desk.PNG" alt="" aria-hidden="true" />
+    <svg class="rhythm-intro-glows" viewBox="0 0 1920 1080" aria-hidden="true">
+        <defs>
+            <radialGradient id="rhythmIntroGlow">
+                <stop offset="0%" stop-color="#ffe4a0" stop-opacity=".55" />
+                <stop offset="40%" stop-color="#ffad58" stop-opacity=".25" />
+                <stop offset="100%" stop-color="#e77a3b" stop-opacity="0" />
+            </radialGradient>
+        </defs>
+        <circle class="rhythm-intro-glow" cx="808" cy="620" r="180" fill="url(#rhythmIntroGlow)" />
+        <circle class="rhythm-intro-glow" cx="1016" cy="350" r="180" fill="url(#rhythmIntroGlow)" />
+        <circle class="rhythm-intro-glow" cx="1110" cy="545" r="180" fill="url(#rhythmIntroGlow)" />
+        <circle class="rhythm-intro-glow" cx="1205" cy="710" r="180" fill="url(#rhythmIntroGlow)" />
+        <circle class="rhythm-intro-glow" cx="1005" cy="818" r="160" fill="url(#rhythmIntroGlow)" />
+    </svg>
     <img class="rhythm-intro-candles" src="./images/bg/candle_5.PNG" alt="" aria-hidden="true" />
     <span class="rhythm-intro-dialogue-stack" aria-live="polite">
         <span class="rhythm-intro-dialogue-box" id="rhythmIntroDialogueBox1" role="group"
@@ -630,6 +673,17 @@
 <div class="rhythm-intro-scene" id="excuseIntroScene" role="group"
     aria-label="狡辯環節前導畫面">
     <img class="rhythm-intro-bg" src="./images/bg/bg_desk.PNG" alt="" aria-hidden="true" />
+    <svg class="rhythm-intro-glows" viewBox="0 0 1920 1080" aria-hidden="true">
+        <defs>
+            <radialGradient id="excuseIntroGlow">
+                <stop offset="0%" stop-color="#ffe4a0" stop-opacity=".55" />
+                <stop offset="40%" stop-color="#ffad58" stop-opacity=".25" />
+                <stop offset="100%" stop-color="#e77a3b" stop-opacity="0" />
+            </radialGradient>
+        </defs>
+        <circle class="rhythm-intro-glow" cx="1016" cy="350" r="180" fill="url(#excuseIntroGlow)" />
+        <circle class="rhythm-intro-glow" cx="1205" cy="710" r="180" fill="url(#excuseIntroGlow)" />
+    </svg>
     <img class="rhythm-intro-candles" src="./images/bg/candle_2.PNG" alt="" aria-hidden="true" />
     <span class="rhythm-intro-dialogue-stack" aria-live="polite">
         <span class="rhythm-intro-dialogue-box" id="excuseIntroDialogueBox1" role="group"
@@ -713,9 +767,6 @@
       </div>
     </section>
     <p id="prison-status" class="sr-only" role="status" aria-live="polite"></p>
-    <div class="controls">
-      <button id="prison-sound" type="button" aria-pressed="false">音效：關</button>
-    </div>
   </section>
   <section class="ending" data-ending="escape" hidden aria-label="逃跑結局">
     <div class="escape-camera" aria-hidden="true">
@@ -753,9 +804,9 @@
     <div class="light" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true"></div>
     <section class="dialogues" aria-label="逃離之後的獨白">
-      <p class="dialogue" data-text="嘖、真是可惜"><span></span></p>
+      <p class="dialogue" data-text="……真是可惜"><span></span></p>
       <p class="dialogue" data-text="看來這裡已經不適合再留下"><span></span></p>
-      <p class="dialogue" data-text="至於下一站————呵、我會期待的"><span></span></p>
+      <p class="dialogue" data-text="至於下一站——呵、我會期待的"><span></span></p>
     </section>
     <div class="vignette" aria-hidden="true"></div>
     <section class="verdict" aria-labelledby="escape-endingTitle" inert>
@@ -768,9 +819,6 @@
       </div>
     </section>
     <p id="escape-status" class="sr-only" role="status" aria-live="polite"></p>
-    <div class="controls">
-      <button id="escape-sound" type="button" aria-pressed="false">音效：關</button>
-    </div>
   </section>
 
   <section class="ending concealed-ending" data-ending="concealed" hidden aria-label="身分未被識破的結局">
@@ -783,8 +831,8 @@
     <div class="dust" aria-hidden="true"></div>
     <section class="dialogues" aria-label="主角的內心獨白">
       <p class="dialogue" data-text="一切如同計畫一般"><span></span></p>
-      <p class="dialogue" data-text="恭喜成為我們的斧下亡魂"><span></span></p>
-      <p class="dialogue" data-text="……親愛的神父"><span></span></p>
+      <p class="dialogue" data-text="感謝您成為我的刀下亡魂"><span></span></p>
+      <p class="dialogue" data-text="……我親愛的神父"><span></span></p>
     </section>
     <div class="concealed-curtain" aria-hidden="true"></div>
     <section class="verdict" aria-labelledby="concealed-endingTitle" inert>
@@ -797,9 +845,6 @@
       </div>
     </section>
     <p id="concealed-status" class="sr-only" role="status" aria-live="polite"></p>
-    <div class="controls">
-      <button id="concealed-sound" type="button" aria-pressed="false">音效：關</button>
-    </div>
   </section>
 
 </div>
@@ -828,6 +873,8 @@
         <span class="slot-glow"></span><span class="slot-flame"></span><span class="slot-smoke"></span>
     </div>
 </template>
+
+    <button class="sound-control" id="soundControl" type="button" aria-pressed="true">音效：開</button>
 
     <!-- Parallax.js 視差外掛函式庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/parallax/3.1.0/parallax.min.js"></script>

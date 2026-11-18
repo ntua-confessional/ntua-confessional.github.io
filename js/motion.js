@@ -1,3 +1,88 @@
+// 新增 Web Audio 音效時，請使用 context 並將音源連接至 output。
+const gameAudio = (() => {
+  const button = document.getElementById("soundControl");
+  let context = null;
+  let output = null;
+  let enabled = true;
+
+  function createAudio() {
+    if (context) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) throw new Error("Web Audio is not supported");
+    const newContext = new AudioContextClass();
+    const newOutput = newContext.createGain();
+    newOutput.gain.value = enabled ? 1 : 0;
+    newOutput.connect(newContext.destination);
+    context = newContext;
+    output = newOutput;
+  }
+
+  // 瀏覽器通常要求先有使用者操作，才能啟動音訊。
+  function startDefaultAudio() {
+    window.removeEventListener("pointerdown", startDefaultAudio, true);
+    window.removeEventListener("keydown", startDefaultAudio, true);
+    if (!enabled) return;
+    try {
+      createAudio();
+      context.resume().then(() => {
+        if (context.state !== "running") throw new Error("Audio context did not resume");
+      }).catch(reportStartError);
+    } catch (error) {
+      reportStartError(error);
+    }
+  }
+
+  function reportStartError(error) {
+    console.error("無法啟用音效", error);
+    if (!enabled) return;
+    enabled = false;
+    if (output) output.gain.setValueAtTime(0, context.currentTime);
+    button.setAttribute("aria-pressed", "false");
+    button.textContent = "無法啟用音效，請重試";
+  }
+
+  window.addEventListener("pointerdown", startDefaultAudio, true);
+  window.addEventListener("keydown", startDefaultAudio, true);
+
+  button.addEventListener("keydown", (event) => {
+    if (event.code === "Space" || event.code === "Enter") event.stopPropagation();
+  });
+
+  button.addEventListener("click", async () => {
+    if (enabled) {
+      enabled = false;
+      if (output) output.gain.setValueAtTime(0, context.currentTime);
+    } else {
+      button.disabled = true;
+      try {
+        createAudio();
+        await context.resume();
+        if (context.state !== "running") throw new Error("Audio context did not resume");
+        enabled = true;
+        output.gain.setValueAtTime(1, context.currentTime);
+      } catch (error) {
+        console.error("無法啟用音效", error);
+        button.textContent = "無法啟用音效，請重試";
+        button.disabled = false;
+        return;
+      }
+      button.disabled = false;
+    }
+    button.setAttribute("aria-pressed", String(enabled));
+    button.textContent = enabled ? "音效：開" : "音效：關";
+  });
+
+  return {
+    get context() { return enabled ? context : null; },
+    get output() { return output; },
+    resume() {
+      if (enabled && context && context.state === "suspended") {
+        context.resume().catch((error) => console.error("無法恢復音效", error));
+      }
+    },
+  };
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
   // 開場至警告頁：快取節點、管理場景狀態與共用動畫計時器。
   const introScene = document.getElementById("introScene");
@@ -26,6 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const howToPlayScene = document.getElementById("howToPlayScene");
   const howtoCandles = document.getElementById("howtoCandles");
+  const howtoStartPrompt = document.getElementById("howtoStartPrompt");
 
   const warningScene = document.getElementById("warningScene");
   const warningCandelfireImg = document.getElementById("warningCandelfireImg");
@@ -789,13 +875,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 第一次點擊顯示全部內容，第二次點擊進入警告頁。
+  // 第一次點擊顯示全部內容，之後點擊提示進入警告頁。
   if (howToPlayScene) {
     howToPlayScene.addEventListener("click", (e) => {
       if (e.button !== 0 || !howToPlayScene.classList.contains("is-active")) return;
       if (!howToPlayScene.classList.contains("is-revealed")) {
         howToPlayScene.classList.add("is-revealed");
-      } else {
+      } else if (howtoStartPrompt && howtoStartPrompt.contains(e.target)) {
         enterWarningPage();
       }
     });
@@ -824,8 +910,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const rhythmScene = document.getElementById("rhythmScene");
   const excuseScene = document.getElementById("excuseScene");
   const questionStage = questionScene.querySelector(".question-stage");
+  const questionEmbers = document.getElementById("questionEmbers");
   const questionNpcLeft = document.getElementById("questionNpcLeft");
   const questionNpcRight = document.getElementById("questionNpcRight");
+
+  for (let i = 0; i < 80; i++) {
+    const ember = document.createElement("span");
+    const rise = i < 50 ? 20 + Math.random() * 20
+      : i < 72 ? 40 + Math.random() * 28
+      : 68 + Math.random() * 22;
+    const duration = 5 + Math.random() * 4;
+    const x = (i % 2 === 0 ? 0.5 : 90.5) + Math.random() * 9;
+    ember.className = "question-ember";
+    ember.style.setProperty("--x", `${x}%`);
+    ember.style.setProperty("--size", `${1.2 + Math.random() * 2}px`);
+    ember.style.setProperty("--rise", `${rise}%`);
+    ember.style.setProperty("--drift", `${(Math.random() - .5) * 24}px`);
+    ember.style.setProperty("--duration", `${duration}s`);
+    ember.style.setProperty("--delay", `${-duration * ((i * 17 % 80) / 80)}s`);
+    questionEmbers.appendChild(ember);
+  }
 
   // NPC 對話框容器
   const questionDialogues = document.getElementById("questionDialogues");
@@ -933,6 +1037,10 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           side: "right",
           text: "……日安，神父",
+        },
+        {
+          side: "right",
+          text: "我已經許有沒有進行告解，請幫助我。",
         },
         {
           side: "right",
@@ -1189,7 +1297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 更新四個選項按鈕
     questionButtons.forEach((button, index) => {
       // 更換按鈕文字
-      button.textContent = data.choices[index] || "";
+      button.querySelector(".question-choice-text").textContent = data.choices[index] || "";
 
       // 沒有文字的選項不顯示
       button.hidden = !data.choices[index];
@@ -1215,8 +1323,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const isFemaleCharacter = selectedGender === "female";
     if (questionNpcRight) {
       questionNpcRight.src = isFemaleCharacter
-        ? "./images/PC_G/PC_close.PNG"
-        : "./images/PC_B/PC_close.PNG";
+        ? "./images/PC_G/PC_open.PNG"
+        : "./images/PC_B/PC_open.PNG";
       questionNpcRight.alt = isFemaleCharacter ? "女角色" : "男角色";
     }
 
@@ -1227,7 +1335,7 @@ document.addEventListener("DOMContentLoaded", () => {
     warningScene.classList.remove("is-active");
 
     // 顯示第七頁
-    questionScene.classList.add("is-active");
+    questionScene.classList.add("is-active", "is-entering");
     syncSceneGender(rhythmScene);
 
     // 從第一題開始
@@ -1242,9 +1350,30 @@ document.addEventListener("DOMContentLoaded", () => {
     // 隱藏完成畫面
     questionFinish.hidden = true;
 
-    // 顯示第一題
+    clearQuestionTimers();
+    questionLocked = true;
+    questionDialogues.replaceChildren();
+    questionChoicePanel.classList.remove("is-ready");
+    questionButtons.forEach((button) => { button.disabled = true; });
+
+    if (!questionNpcRight || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finishQuestionEntrance();
+    }
+  }
+
+  function finishQuestionEntrance() {
+    if (!questionScene.classList.contains("is-entering")) return;
+    questionScene.classList.remove("is-entering");
     renderQuestion();
   }
+
+  ["animationend", "animationcancel"].forEach((eventName) => {
+    questionScene.addEventListener(eventName, (event) => {
+      if (event.target === questionNpcRight && event.animationName === "questionNpcRightEntrance") {
+        finishQuestionEntrance();
+      }
+    });
+  });
 
   // 玩家作答、處理扣分與特殊環節分支。
   function continueQuestionnaire() {
@@ -1333,14 +1462,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // 被選擇的按鈕變色
-    questionButtons[index].style.background = "#898ed0";
+    questionButtons[index].classList.add("is-selected");
 
     // ===== 延遲後進入下一題 =====
 
     questionTimers.push(
       setTimeout(() => {
         // 還原按鈕顏色
-        questionButtons[index].style.background = "";
+        questionButtons[index].classList.remove("is-selected");
 
         // 題目進度加一
         questionIndex++;
@@ -1499,18 +1628,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
   // Web Audio 合成音效
   // =========================================
-  let audioCtx = null;
   function ensureAudio() {
-    if (!audioCtx) {
-      const AudioContextClass =
-        window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        audioCtx = new AudioContextClass();
-      }
-    }
-    if (audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume();
-    }
+    gameAudio.resume();
   }
 
   function playTone(
@@ -1520,7 +1639,8 @@ document.addEventListener("DOMContentLoaded", () => {
     gainVal = 0.14,
     endFreqRatio = 0.55,
   ) {
-    if (!audioCtx) return;
+    const audioCtx = gameAudio.context;
+    if (!audioCtx || audioCtx.state !== "running") return;
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -1535,7 +1655,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(gameAudio.output);
     osc.start(now);
     osc.stop(now + duration);
   }
@@ -2336,18 +2456,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
   // Web Audio 合成音效
   // =========================================
-  let audioCtx = null;
   function ensureAudio() {
-    if (!audioCtx) {
-      const AudioContextClass =
-        window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        audioCtx = new AudioContextClass();
-      }
-    }
-    if (audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume();
-    }
+    gameAudio.resume();
   }
 
   function playTone(
@@ -2357,7 +2467,8 @@ document.addEventListener("DOMContentLoaded", () => {
     gainVal = 0.14,
     endFreqRatio = 0.6,
   ) {
-    if (!audioCtx) return;
+    const audioCtx = gameAudio.context;
+    if (!audioCtx || audioCtx.state !== "running") return;
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -2372,7 +2483,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(gameAudio.output);
     osc.start(now);
     osc.stop(now + duration);
   }
@@ -3008,8 +3119,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const controllers = new Map();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   let active = null;
-  let audio;
-  let soundOn = false;
+  const soundButton = document.getElementById('soundControl');
   const escapeDurations = {
     travel: 2300,
     shadow: 420,
@@ -3029,30 +3139,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const name = root.dataset.ending;
     const find = id => root.querySelector('#' + name + '-' + id);
     const lines = [...root.querySelectorAll('.dialogue')];
-    const soundButton = find('sound');
     const verdict = root.querySelector('.verdict');
     const status = find('status');
     // 修改三個 .dialogue 的 data-text 即可更換對話。
     let index = -1, state = 'ready', chars = [], cursor = 0;
     let typingTimer, nextTimer, closeTimer, verdictTimer, departTimer, fireTimer, railTimer;
     const voice = () => {
-      if (!soundOn || !audio || audio.state !== 'running') return;
+      const audio = gameAudio.context;
+      if (!audio || audio.state !== 'running') return;
       const oscillator = audio.createOscillator(), gain = audio.createGain();
       oscillator.type = 'sine'; oscillator.frequency.value = 220 + Math.random() * 80;
       gain.gain.setValueAtTime(.018, audio.currentTime);
       gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + .035);
-      oscillator.connect(gain).connect(audio.destination);
+      oscillator.connect(gain).connect(gameAudio.output);
       oscillator.start(); oscillator.stop(audio.currentTime + .04);
     };
     function impact() {
-      if (!soundOn || !audio || audio.state !== 'running') return;
+      const audio = gameAudio.context;
+      if (!audio || audio.state !== 'running') return;
       [64, 113, 207].forEach((frequency, i) => {
         const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
         o.type = 'triangle'; o.frequency.setValueAtTime(frequency, t);
         o.frequency.exponentialRampToValueAtTime(frequency / 2, t + .7);
         g.gain.setValueAtTime(.08 / (i + 1), t);
         g.gain.exponentialRampToValueAtTime(.001, t + 1.1);
-        o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 1.2);
+        o.connect(g).connect(gameAudio.output); o.start(t); o.stop(t + 1.2);
       });
     }
     function finishLine() {
@@ -3061,7 +3172,10 @@ document.addEventListener("DOMContentLoaded", () => {
       line.querySelector('span').textContent = line.dataset.text;
       line.classList.remove('is-speaking'); state = 'waiting';
       status.textContent = line.dataset.text;
-      nextTimer = setTimeout(next, Math.max(1800, chars.length * 120));
+      const delay = index === lines.length - 1
+        ? Math.max(2500, chars.length * 140)
+        : Math.max(1500, chars.length * 100);
+      nextTimer = setTimeout(next, delay);
     }
     function typeNext() {
       if (state !== 'typing') return;
@@ -3072,12 +3186,13 @@ document.addEventListener("DOMContentLoaded", () => {
       typingTimer = setTimeout(typeNext, /[，。！？]/u.test(ch) ? 320 : 65);
     }
     function railSound() {
-      if (!soundOn || !audio || audio.state !== 'running') return;
+      const audio = gameAudio.context;
+      if (!audio || audio.state !== 'running') return;
       const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
       o.type = 'triangle'; o.frequency.setValueAtTime(100, t);
       o.frequency.exponentialRampToValueAtTime(35, t + .11);
       g.gain.setValueAtTime(.09, t); g.gain.exponentialRampToValueAtTime(.001, t + .14);
-      o.connect(g).connect(audio.destination); o.start(); o.stop(t + .15);
+      o.connect(g).connect(gameAudio.output); o.start(); o.stop(t + .15);
     }
     function showVerdict() {
       state = 'ended';
@@ -3173,19 +3288,9 @@ document.addEventListener("DOMContentLoaded", () => {
       soundButton.focus({preventScroll: true});
       next();
     }
-    soundButton.addEventListener('click', async () => {
-      if (soundOn) {soundOn = false;} else {
-        try {
-          const Audio = window.AudioContext || window.webkitAudioContext;
-          if (!Audio) throw new Error('unsupported');
-          audio ||= new Audio(); await audio.resume();soundOn = true;
-        } catch {soundButton.textContent = '此瀏覽器無法播放音效';return;}
-      }
-      updateSound();
-    });
     find('replay').addEventListener('click', start);
     root.querySelector('.back-to-intro').addEventListener('click', () => window.location.reload());
-    controllers.set(name, { start, reset, soundButton });
+    controllers.set(name, { start, reset });
     const fire = root.querySelector('.starfire');
     if (fire) {
       for (const sheet of fire.querySelectorAll('.fire-sheet')) {
@@ -3227,13 +3332,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const speck = document.createElement('i');
       speck.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--duration:${8+Math.random()*10}s;--delay:${-Math.random()*18}s`;
       dust.append(speck);
-    }
-  }
-
-  function updateSound() {
-    for (const { soundButton } of controllers.values()) {
-      soundButton.setAttribute('aria-pressed', String(soundOn));
-      soundButton.textContent = soundOn ? '音效：開' : '音效：關';
     }
   }
 
