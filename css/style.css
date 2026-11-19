@@ -1579,6 +1579,47 @@ body {
     outline-offset: 6px;
 }
 
+.special-howto-scene .howto-row {
+    grid-template-columns: minmax(0, 28%) minmax(40px, 1fr) minmax(0, 40%);
+}
+
+.special-howto-graphic svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.special-howto-scene .howto-desc {
+    white-space: normal;
+    line-height: 1.65;
+}
+
+.special-howto-scene .howto-desc strong {
+    font-weight: 500;
+    color: #ffd88a;
+}
+
+@media (max-width: 650px) {
+    .special-howto-scene .howto-container {
+        width: 90vw;
+        gap: clamp(16px, 3vh, 28px);
+    }
+
+    .special-howto-scene .howto-list {
+        gap: clamp(16px, 3vh, 28px);
+    }
+
+    .special-howto-scene .howto-row {
+        grid-template-columns: minmax(75px, 28%) minmax(20px, 1fr) minmax(0, 55%);
+        gap: 8px;
+    }
+
+    .special-howto-scene .howto-desc {
+        font-size: clamp(13px, 3.2vw, 16px);
+        letter-spacing: 0;
+    }
+}
+
 /* =========================================
    第六頁：遊戲開始前警告畫面（SVG 燭台＋星火飛舞）
    ========================================= */
@@ -1918,13 +1959,22 @@ body {
     pointer-events: auto;
 }
 
+.question-scene::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 1), transparent 20%);
+    pointer-events: none;
+}
+
 /* 所有角色與對話都以此容器定位 */
 .question-stage {
     position: relative;
+    z-index: 0;
     width: min(100vw, 177.78vh);
     aspect-ratio: 16/9;
     overflow: hidden;
-    background: #292856;
 }
 
 .question-continue-hint {
@@ -2071,21 +2121,25 @@ body {
     display: none;
 }
 
+.question-bubble,
+.excuse-scene .speech-bubble {
+    background: rgba(105, 111, 172, .8);
+    color: #f6f4ff;
+    border-radius: 18px;
+}
+
 .question-bubble {
     position: relative;
     display: block;
     
     width: fit-content;
-    max-width: 70%;
+    max-width: 90%;
     min-height: 7%;
     margin-bottom: 1.3%;
     padding: 1.5% 2.4%;
-    background: rgba(105, 111, 172, .8);
-    color: #f6f4ff;
     font-size: clamp(16px, 1.5vw, 24px);
     font-weight: 400;
     line-height: 1.4;
-    border-radius: 18px;
     opacity: 0;
     transform: translateY(20px);
     animation: questionBubbleIn .4s ease forwards;
@@ -2093,11 +2147,19 @@ body {
 
 .question-bubble.left {
     margin-right: auto;
+}
+
+.question-bubble.left,
+.speech-bubble.is-left {
     border-bottom-left-radius: 5px;
 }
 
 .question-bubble.right {
     margin-left: auto;
+}
+
+.question-bubble.right,
+.speech-bubble.is-right {
     border-bottom-right-radius: 5px;
 }
 
@@ -2110,7 +2172,8 @@ body {
     font-size: clamp(20px, 1.8vw, 28px);
 }
 
-.question-bubble::after {
+.question-bubble::after,
+.speech-bubble::after {
     content: "";
     position: absolute;
     bottom: 10px;
@@ -2120,12 +2183,14 @@ body {
     border-bottom: 10px solid transparent;
 }
 
-.question-bubble.left::after {
+.question-bubble.left::after,
+.speech-bubble.is-left::after {
     left: -12px;
     border-right: 12px solid rgba(105, 111, 172, .8);
 }
 
-.question-bubble.right::after {
+.question-bubble.right::after,
+.speech-bubble.is-right::after {
     right: -12px;
     border-left: 12px solid rgba(105, 111, 172, .8);
 }
@@ -2139,7 +2204,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .question-bubble {
+    .question-bubble,
+    .speech-bubble {
         opacity: 1;
         transform: none;
     }
@@ -2820,7 +2886,7 @@ body {
 }
 
 /* =========================================
-   2. 中間節奏長條與移動箭頭（微調寬度避免與胸口紅心重疊）
+   2. 中間節奏長條與移動箭頭
    ========================================= */
 .rhythm-track-area {
   position: absolute;
@@ -2907,67 +2973,137 @@ body {
 }
 
 /* 心電圖、掃描亮點和可安定心跳的時機 */
+/*【修改】古典哥德式心跳檢定 UI */
+
+/* 心跳容器 */
 .rhythm-ecg {
   position: relative;
+
   height: clamp(67px, 10vh, 108px);
+
+  /* 移除現代儀器外框 */
+  border: none;
+  border-radius: 0;
+
+  /* 移除深藍色背景與網格 */
+  background: transparent;
+  background-image: none;
+
+  /* 移除原本的電子螢幕陰影 */
+  box-shadow: none;
+
+  /* 保留波形在容器內 */
   overflow: hidden;
-  border: 1px solid rgba(125, 195, 174, 0.42);
-  border-radius: 7px;
-  background-color: #101a2a;
-  background-image:
-    linear-gradient(rgba(117, 191, 170, 0.10) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(117, 191, 170, 0.10) 1px, transparent 1px);
-  background-size: 13px 13px;
-  box-shadow: inset 0 0 21px #080e1b, 0 4px 16px #080e1b80;
-  color: #83eac4;
+
+  /* 古典暗金色 */
+  color: #bba58b;
 }
 
-.rhythm-ecg-svg, .rhythm-ecg-window {
+
+/* SVG 與判定區位置 */
+.rhythm-ecg-svg,
+.rhythm-ecg-window {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
+
+/* 古金色判定區 */
 .rhythm-ecg-window {
   width: auto;
   right: auto;
-  background: #a9e9a926;
-  border-inline: 1px solid #b7f1ac9e;
+
+  /* 不使用明顯綠色方框 */
+  border: none;
+
+  /* 柔和的古金色光帶 */
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(195, 164, 118, 0.06) 20%,
+      rgba(213, 183, 137, 0.18) 50%,
+      rgba(195, 164, 118, 0.06) 80%,
+      transparent 100%);
 }
 
-.rhythm-ecg-trace, .rhythm-ecg-cursor line {
+
+/* 心跳波形與掃描游標 */
+.rhythm-ecg-trace,
+.rhythm-ecg-cursor line {
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.5px;
+  stroke-width: 1.7px;
   vector-effect: non-scaling-stroke;
 }
 
+
+/* 心跳波形 */
 .rhythm-ecg-trace {
   stroke-linejoin: round;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 3px currentColor);
+
+  /* 移除螢光綠光暈，改成極淡的暖光 */
+  filter: drop-shadow(0 0 2px rgba(221, 191, 151, 0.25));
 }
 
+
+/* 掃描游標 */
 .rhythm-ecg-cursor {
-  color: #d6fff0;
+  color: #f4dfb8;
+  filter:
+    drop-shadow(0 0 3px rgba(255, 224, 163, 0.9))
+    drop-shadow(0 0 9px rgba(221, 173, 103, 0.5));
 }
 
-.rhythm-ecg-cursor > line:first-child {
-  opacity: 0.45;
-  stroke-dasharray: 3 4;
+
+/* 掃描虛線 */
+.rhythm-ecg-cursor>line:first-child {
+  stroke-width: 2.5px;
+  stroke-dasharray: 4 4;
+  opacity: 0.95;
 }
 
+
+/* 掃描圓點 */
 .rhythm-ecg-cursor .rhythm-ecg-dot {
-  stroke-width: 7px;
+  stroke-width: 11px;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 3px currentColor);
+  filter:
+    drop-shadow(0 0 4px #ffe8b6)
+    drop-shadow(0 0 9px rgba(255, 202, 120, 0.7));
 }
 
-.rhythm-ecg.is-in-window .rhythm-ecg-cursor { color: #edffc2; }
-.rhythm-ecg.is-hit .rhythm-ecg-window { background: #7ee08152; }
-.rhythm-ecg.is-stable { color: #adf5a8; }
-.rhythm-ecg.is-missed { color: #ffa195; }
+
+/* 心跳判定狀態 */
+
+/* 掃描游標進入判定區 */
+.rhythm-ecg.is-in-window .rhythm-ecg-cursor {
+  color: #fff3d6;
+  filter:
+    drop-shadow(0 0 5px rgba(255, 238, 190, 1))
+    drop-shadow(0 0 13px rgba(255, 206, 127, 0.85));
+}
+
+/* 玩家成功命中 */
+.rhythm-ecg.is-hit .rhythm-ecg-window {
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(221, 188, 130, 0.30),
+      transparent);
+}
+
+/* 成功：暖金色波形 */
+.rhythm-ecg.is-stable {
+  color: #d9c4a1;
+}
+
+/* 失敗：暗紅色波形 */
+.rhythm-ecg.is-missed {
+  color: #a66c70;
+}
+
+/*結算時隱藏判定區與游標 */
 .rhythm-track-area.is-standby .rhythm-ecg-cursor,
 .rhythm-ecg.is-stable .rhythm-ecg-cursor,
 .rhythm-ecg.is-missed .rhythm-ecg-cursor,
@@ -3050,7 +3186,7 @@ body {
 }
 
 /* =========================================
-   3. 右側角色立繪（IMG_8964 2.jpg）與胸口紅心按鈕
+   3. 右側角色立繪
    ========================================= */
 .rhythm-character-wrap {
   position: absolute;
@@ -3090,103 +3226,6 @@ body {
 .rhythm-character-img.is-black-bg {
   mix-blend-mode: lighten;
   filter: contrast(1.06) brightness(1.05);
-}
-
-/* 胸口紅心按鈕（對齊新角色手勢心口位置） */
-.rhythm-heart-btn {
-  position: absolute;
-  top: 34.5%;
-  left: 54.5%;
-  z-index: 7;
-  width: clamp(86px, 8.6vw, 122px);
-  aspect-ratio: 120 / 110;
-  padding: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translate(-50%, -50%) scale(1);
-  transition:
-    transform 0.14s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.2s ease,
-    opacity 0.3s ease;
-}
-
-.rhythm-heart-btn:disabled {
-  opacity: 0.45;
-}
-
-.rhythm-heart-btn:not(:disabled):hover {
-  filter: drop-shadow(0 0 14px rgba(224, 46, 46, 0.7));
-}
-
-.rhythm-heart-btn.is-beating {
-  transform: translate(-50%, -50%) scale(1.16);
-}
-
-.rhythm-heart-btn.is-hit-pop {
-  transform: translate(-50%, -50%) scale(1.25);
-  filter: drop-shadow(0 0 22px rgba(126, 247, 142, 0.95));
-}
-
-.heart-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.heart-shape {
-  fill: rgba(154, 24, 34, 0.76);
-  stroke: #c92020;
-  stroke-width: 7.5;
-  stroke-linejoin: round;
-  transition:
-    fill 0.2s ease,
-    stroke 0.2s ease;
-}
-
-.rhythm-heart-btn:not(:disabled):hover .heart-shape {
-  fill: rgba(190, 28, 38, 0.88);
-  stroke: #e02b2b;
-}
-
-.heart-label {
-  position: absolute;
-  top: 47%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #f4f5fc;
-  font-family: inherit;
-  font-size: clamp(14px, 1.3vw, 19px);
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  pointer-events: none;
-}
-
-.heart-shockwave {
-  position: absolute;
-  inset: 8%;
-  border-radius: 50%;
-  border: 3px solid rgba(126, 247, 142, 0.9);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.rhythm-heart-btn.is-hit-pop .heart-shockwave {
-  animation: heartShockwaveRing 0.55s ease-out forwards;
-}
-
-@keyframes heartShockwaveRing {
-  0% {
-    opacity: 0.95;
-    transform: scale(0.75);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.85);
-  }
 }
 
 /* =========================================
@@ -3487,19 +3526,6 @@ body {
   filter: none;
 }
 
-.rhythm-scene[data-gender="male"] .rhythm-heart-btn {
-  top: 20.5%;
-  left: 55.5%;
-}
-
-.rhythm-scene[data-gender="male"] .heart-shape {
-  fill: rgba(154, 24, 34, 0.72);
-}
-
-.rhythm-scene[data-gender="male"] .rhythm-heart-btn:not(:disabled):hover .heart-shape {
-  fill: rgba(190, 28, 38, 0.85);
-}
-
 /* Integrated male excuse branch styles */
 .excuse-scene,
 .excuse-scene * {
@@ -3551,7 +3577,7 @@ body {
 .excuse-hud {
   position: absolute;
   top: 3.8%;
-  right: 3.2%;
+  right: calc(3.2% + 120px);
   z-index: 10;
   display: flex;
   align-items: center;
@@ -3604,91 +3630,52 @@ body {
 }
 
 /* =========================================
-   2. 雙欄對話氣泡（對齊圖一、圖二配置）
+   2. 狡辯對話氣泡
    ========================================= */
 .dialogue-column {
   position: absolute;
   z-index: 8;
+  top: 12.2%;
+  bottom: calc(5.6% + clamp(148px, 23.5vh, 210px) + 10px);
+  left: 5.2%;
+  width: 58%;
   display: flex;
   flex-direction: column;
   gap: clamp(12px, 1.6vh, 18px);
-  pointer-events: none;
+  padding: 0 14px 12px 22vw;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* 左側神父欄位 */
-.dialogue-column-left {
-  top: 12.2%;
-  left: 5.2%;
-  width: clamp(240px, 26.5vw, 390px);
-}
-
-/* 中間教徒狡辯欄位 */
-.dialogue-column-center {
-  top: 17.2%;
-  left: 35.4%;
-  width: clamp(245px, 27vw, 400px);
+.dialogue-column::-webkit-scrollbar {
+  display: none;
 }
 
 .speech-bubble {
   position: relative;
+  flex-shrink: 0;
+  width: fit-content;
+  max-width: min(90%, 400px);
   min-height: clamp(44px, 5.4vh, 56px);
   padding: clamp(10px, 1.25vh, 14px) clamp(18px, 1.8vw, 24px);
-  background-color: #656ca6;
-  border-radius: 6px;
-  box-shadow:
-    0 6px 0 #131238,
-    0 10px 20px rgba(8, 8, 28, 0.42);
-  color: #ffffff;
   font-size: clamp(14px, 1.32vw, 19px);
   font-weight: 400;
   letter-spacing: 0.05em;
   line-height: 1.45;
+  overflow-wrap: anywhere;
   opacity: 0;
-  transform: translateY(8px);
-  animation: bubbleAppear 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform: translateY(20px);
+  animation: questionBubbleIn .4s ease forwards;
 }
 
-@keyframes bubbleAppear {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.speech-bubble.is-left {
+  align-self: flex-start;
 }
 
-/* 左側神父氣泡左下尖尾 */
-.speech-bubble.is-left::before {
-  content: "";
-  position: absolute;
-  left: -12px;
-  bottom: 0;
-  width: 0;
-  height: 0;
-  border-bottom: 11px solid #656ca6;
-  border-left: 14px solid transparent;
-  filter: drop-shadow(0 5px 0 #131238);
-}
-
-/* 中間教徒氣泡右下尖尾 */
-.speech-bubble.is-right::after {
-  content: "";
-  position: absolute;
-  right: -12px;
-  bottom: 0;
-  width: 0;
-  height: 0;
-  border-bottom: 11px solid #656ca6;
-  border-right: 14px solid transparent;
-  filter: drop-shadow(0 5px 0 #131238);
-}
-
-/* 第四句狡辯氣泡往下拉開間距，貼近打字框上方（如圖一、圖二） */
-.speech-bubble.is-separated {
-  margin-top: clamp(28px, 4.8vh, 52px);
-}
-
-/* 第二輪左側第 3 句神父追問往下拉開間距（如圖二） */
-.speech-bubble.is-left-separated {
-  margin-top: clamp(14px, 2.2vh, 26px);
+.speech-bubble.is-right {
+  align-self: flex-end;
 }
 
 /* 打字機閃爍游標 */
@@ -4167,11 +4154,15 @@ body {
 .ending-scene button:focus-visible { outline: 2px solid #f1c5e9; outline-offset: 6px; }
 .ending-scene .ending { position: absolute; inset: 0; width: 100%; height: 100svh; min-height: 400px; }
 .ending{position:relative;width:100%;height:100svh;min-height:400px;overflow:hidden;isolation:isolate;background:#27265e}
+
 .portrait{position:absolute;inset:0;transform:scale(1.045);transform-origin:30% 45%;animation:portraitIn 2.6s ease-out both;transition:filter 2.5s,opacity 2.5s}
 .portrait img{width:100%;height:100%;object-fit:cover;object-position:center}
+
 .light{position:absolute;inset:-20%;pointer-events:none;background:linear-gradient(115deg,transparent 28%,#c8b7f914 43%,transparent 57%);animation:lightDrift 12s ease-in-out infinite alternate}
+
 .dust{position:absolute;inset:0;pointer-events:none}
 .dust i{position:absolute;width:3px;height:3px;background:#e0d5ff;border-radius:50%;opacity:0;animation:floatDust var(--duration) var(--delay) linear infinite}
+
 .dialogues{position:absolute;z-index:2;right:2.2%;top:47%;width:46%;display:grid;gap:clamp(16px,4.5vh,50px)}
 .dialogue{position:relative;justify-self:start;max-width:100%;margin:0;min-height:clamp(45px,9vh,100px);display:grid;align-content:center;align-items:start;padding:14px 20px 14px 30px;isolation:isolate;opacity:0;transform:translateX(30px);transition:opacity .55s,transform .7s cubic-bezier(.2,.7,.2,1);font-weight:700;font-size:clamp(13px,1.95vw,28px);letter-spacing:.2em;line-height:1.75;text-align:left;overflow-wrap:anywhere}
 .dialogue::before{content:"";position:absolute;inset:0;background:#7775ab;z-index:-1;clip-path:polygon(7% 3%,20% 7%,39% 4%,66% 6%,83% 3%,98% 0,99% 20%,98% 43%,99% 70%,98% 97%,77% 94%,57% 98%,30% 94%,14% 97%,9% 88%,6% 68%,0 77%,5% 57%,6% 28%)}
@@ -4180,24 +4171,31 @@ body {
 .dialogue:nth-child(2){margin-left:6%;margin-right:1%}.dialogue:nth-child(3){margin-left:9%}
 .dialogue.is-visible{opacity:1;transform:translateX(0)}
 .dialogue.is-speaking span::after{content:"";position:absolute;display:inline-block;width:2px;height:1em;background:currentColor;vertical-align:-.1em;margin-left:5px;animation:cursorBlink .8s steps(1) infinite}
+
 .prison{position:absolute;inset:-2px;z-index:4;pointer-events:none;perspective:900px}
+
 .gate{position:absolute;top:0;width:50%;height:100%;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(16.666% - 14px),#080a11 calc(16.666% - 14px),#414350 calc(16.666% - 10px),#131520 calc(16.666% - 5px),#070811 16.666%);border-block:clamp(14px,3vh,28px) solid #151621;box-shadow:inset 0 1px #67647c,0 0 35px #0006;transition:transform 1.65s cubic-bezier(.6,0,.3,1)}
 .gate::before,.gate::after{content:"";position:absolute;left:0;right:0;height:16px;background:linear-gradient(#53505f,#171722 35%,#080912);box-shadow:0 5px 10px #0007}.gate::before{top:23%}.gate::after{bottom:20%}
 .gate-left{left:0;transform:translateX(-105%);border-right:12px solid #181924}.gate-right{right:0;transform:translateX(105%);border-left:12px solid #181924}
+
 .lock{position:absolute;z-index:1;right:-28px;top:48%;width:44px;height:64px;border-radius:6px;background:linear-gradient(110deg,#6b6572,#23232c 60%);border:2px solid #11121b;box-shadow:3px 5px 10px #0008}
 .lock::after{content:"";position:absolute;left:17px;top:23px;width:7px;height:18px;border-radius:50% 50% 2px 2px;background:#070710}
+
 .ending.is-closing .gate{transform:translateX(0)}
 .ending.is-closing .portrait{filter:brightness(.42) saturate(.65);opacity:.65}
 .ending.is-closing .dialogues{transition:opacity 1.4s;opacity:0}
+
 .vignette{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at 40% 42%,transparent 20%,#090a2455 65%,#030511cb 110%);transition:background 2s}
 .ending.is-locked{animation:gateImpact .48s ease-out}
 .verdict{position:absolute;z-index:6;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#0d10255c;opacity:0;visibility:hidden;transition:opacity 1.8s}
 .verdict.is-visible{opacity:1;visibility:visible}.eyebrow{font-size:12px;letter-spacing:.35em;color:#b1a4ce}.verdict h1{font-size:clamp(25px,4vw,54px);font-weight:400;letter-spacing:.16em;margin:20px 0}.verdict-copy{color:#c2bed0;font-size:14px;line-height:2.2;letter-spacing:.12em}
 .verdict button,.sound-control{border:1px solid #c7bdd752;background:#24233d9c;border-radius:30px;padding:10px 22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.verdict button{margin-top:22px}
+
 .sound-control{position:fixed;right:22px;top:18px;z-index:100;font:12px "PingFang TC","Microsoft JhengHei",sans-serif;color:#fff;}
 .sound-control:focus-visible{outline:2px solid #f1c5e9;outline-offset:6px}
 .intro-scene.is-active ~ .sound-control{display:none}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
 @keyframes portraitIn{from{opacity:0;transform:scale(1.12)}to{opacity:1;transform:scale(1.045)}}
 @keyframes lightDrift{to{transform:translateX(8%) rotate(4deg);opacity:.45}}
 @keyframes floatDust{0%{transform:translate(0,35px);opacity:0}25%{opacity:.3}80%{opacity:.12}100%{transform:translate(25px,-100px);opacity:0}}
@@ -4216,6 +4214,7 @@ body {
 [data-ending="escape"] .dialogue:nth-child(2){margin-left:7%}[data-ending="escape"] .dialogue:nth-child(3){margin-left:10%}
 .blackout{position:absolute;inset:0;z-index:5;pointer-events:none;background:#090a20;opacity:0;transition:opacity .7s}
 .ending.is-departed .escape-camera{animation:none;opacity:0}
+
 @keyframes escapeEnter{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:scale(1.025)}}
 @keyframes carSway{to{transform:translateY(-3px) rotate(.35deg)}}
 @keyframes seatSway{to{transform:translateY(3px)}}

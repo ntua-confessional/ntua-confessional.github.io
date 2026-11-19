@@ -112,6 +112,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const howToPlayScene = document.getElementById("howToPlayScene");
   const howtoCandles = document.getElementById("howtoCandles");
   const howtoStartPrompt = document.getElementById("howtoStartPrompt");
+  const specialHowToScene = document.getElementById("specialHowToScene");
+  const specialHowtoPrompt = document.getElementById("specialHowtoPrompt");
 
   const warningScene = document.getElementById("warningScene");
   const warningCandelfireImg = document.getElementById("warningCandelfireImg");
@@ -515,6 +517,10 @@ document.addEventListener("DOMContentLoaded", () => {
       howToPlayScene.classList.remove("is-active", "is-revealed");
     }
 
+    if (specialHowToScene) {
+      specialHowToScene.classList.remove("is-active", "is-revealed");
+    }
+
     if (howtoCandles) {
       howtoCandles
         .querySelectorAll(".mini-candle")
@@ -766,13 +772,10 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 第五頁：點擊場景或提示區，進入第六頁警告畫面並啟動星火動畫
-  function enterWarningPage() {
-    if (isEnteringWarning) return;
+  // 第五頁：進入特殊環節操作教學。
+  function enterSpecialHowToPage() {
     if (!howToPlayScene || !howToPlayScene.classList.contains("is-active"))
       return;
-
-    isEnteringWarning = true;
 
     if (candleDemoTimer) {
       clearInterval(candleDemoTimer);
@@ -780,6 +783,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     howToPlayScene.classList.remove("is-active");
+
+    timers.push(
+      setTimeout(() => {
+        specialHowToScene.classList.remove("is-revealed");
+        specialHowToScene.classList.add("is-active");
+      }, 450),
+    );
+  }
+
+  // 特殊環節教學後進入第六頁警告畫面並啟動星火動畫。
+  function enterWarningPage() {
+    if (isEnteringWarning || !specialHowToScene.classList.contains("is-active"))
+      return;
+
+    isEnteringWarning = true;
+    specialHowToScene.classList.remove("is-active");
 
     timers.push(
       setTimeout(() => {
@@ -875,13 +894,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 第一次點擊顯示全部內容，之後點擊提示進入警告頁。
+  // 第一次點擊顯示全部內容，之後點擊提示進入下一頁。
   if (howToPlayScene) {
     howToPlayScene.addEventListener("click", (e) => {
       if (e.button !== 0 || !howToPlayScene.classList.contains("is-active")) return;
       if (!howToPlayScene.classList.contains("is-revealed")) {
         howToPlayScene.classList.add("is-revealed");
       } else if (howtoStartPrompt && howtoStartPrompt.contains(e.target)) {
+        enterSpecialHowToPage();
+      }
+    });
+  }
+
+  if (specialHowToScene) {
+    specialHowToScene.addEventListener("click", (e) => {
+      if (e.button !== 0 || !specialHowToScene.classList.contains("is-active")) return;
+      if (!specialHowToScene.classList.contains("is-revealed")) {
+        specialHowToScene.classList.add("is-revealed");
+      } else if (specialHowtoPrompt && specialHowtoPrompt.contains(e.target)) {
         enterWarningPage();
       }
     });
@@ -1040,7 +1070,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         {
           side: "right",
-          text: "我已經許有沒有進行告解，請幫助我。",
+          text: "我已許久沒有進行告解，請幫助我。",
         },
         {
           side: "right",
@@ -1573,7 +1603,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const rhythmJudgment = document.getElementById("rhythmJudgment");
 
   const rhythmCharacterImg = document.getElementById("rhythmCharacterImg");
-  const rhythmHeartBtn = document.getElementById("rhythmHeartBtn");
   const rhythmCandlesWrap = document.getElementById("rhythmCandlesWrap");
   const rhythmCandlesImg = document.getElementById("rhythmCandlesImg");
   const rhythmInstructionBox = document.getElementById("rhythmInstructionBox");
@@ -1769,7 +1798,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const waves = [
     {
-      label: "第 1 階段心律：急促加速脈動",
+      label: "第 1 階段心律",
       dialogue: "「和您的對話令我感到懷疑。」",
       zoneStart: 48,
       zoneWidth: 13,
@@ -1780,7 +1809,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     },
     {
-      label: "第 2 階段心律：驟停頓挫・突進",
+      label: "第 2 階段心律",
       dialogue: "「……你的眼神為什麼在閃躲？」",
       zoneStart: 60,
       zoneWidth: 12,
@@ -1794,7 +1823,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     },
     {
-      label: "第 3 階段心律：心律顫動・逆向回彈",
+      label: "第 3 階段心律",
       dialogue: "「別想編造謊言，你的脈搏正在發抖！」",
       zoneStart: 42,
       zoneWidth: 11,
@@ -1808,8 +1837,8 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     },
     {
-      label: "第 4 階段心律：極限心悸・終局詰問",
-      dialogue: "「案發當晚，你真的待在教堂裡嗎？！」",
+      label: "第 4 階段心律",
+      dialogue: "「案發當晚，你真的待在教堂裡嗎？」",
       zoneStart: 66,
       zoneWidth: 10,
       duration: 1480,
@@ -1881,7 +1910,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dialogueNextHint) dialogueNextHint.classList.remove("is-visible");
     if (rhythmInstructionBox)
       rhythmInstructionBox.classList.add("is-clickable");
-    if (rhythmHeartBtn) rhythmHeartBtn.disabled = true;
     if (rhythmTrackArea) rhythmTrackArea.classList.add("is-standby");
 
     if (index === 0 && rhythmInstructionText) {
@@ -2146,12 +2174,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function triggerHeartbeatPulse() {
       playTone(92, 0.13, "sine", 0.24);
-      if (rhythmHeartBtn) {
-        rhythmHeartBtn.classList.add("is-beating");
-        stepTimers.push(
-          setTimeout(() => rhythmHeartBtn.classList.remove("is-beating"), 130),
-        );
-      }
     }
 
     function updateWaveUI() {
@@ -2200,7 +2222,7 @@ document.addEventListener("DOMContentLoaded", () => {
       function tick(now) {
         if (!isSweepActive || phase !== "rhythm") return;
         const elapsed = now - sweepStartTime;
-        const t = Math.min(1, elapsed / current.duration);
+        const t = Math.max(0, Math.min(1, elapsed / current.duration));
 
         scanPercent = current.curve(t);
         if (pendingPeaks.length && scanPercent >= pendingPeaks[0]) {
@@ -2232,7 +2254,6 @@ document.addEventListener("DOMContentLoaded", () => {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
-      if (rhythmHeartBtn) rhythmHeartBtn.disabled = true;
       rhythmEcg?.classList.remove("is-hit", "is-in-window");
       rhythmEcg?.classList.add(isPassed ? "is-stable" : "is-missed");
       drawAmbientTrace(performance.now());
@@ -2240,21 +2261,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isPassed) {
         playTone(659.25, 0.35, "triangle", 0.2, 1.15);
         if (rhythmWaveLabel)
-          rhythmWaveLabel.textContent = "檢定結果：過（兩根蠟燭熄滅）";
+          rhythmWaveLabel.textContent = "檢定成功";
 
         typewriter.start(
           rhythmDialogueText,
-          "「……看來只是我多心了。願主寬恕你的不安，請繼續告解吧。」",
+          "「……看來只是我多心了。願主寬恕你的不安。」",
           44,
         );
         if (rhythmInstructionText) {
           typewriter.start(
             rhythmInstructionText,
-            "完美通過！兩根蠟燭熄滅，成功瞞過神父的懷疑。",
+            "完美通過，成功瞞過神父。",
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "繼續告解對話";
+                rhythmActionBtn.textContent = "繼續告解";
                 rhythmActionBtn.dataset.outcome = "success";
                 rhythmActionBtn.hidden = false;
               }
@@ -2283,21 +2304,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (rhythmWaveLabel) {
-          rhythmWaveLabel.textContent = `檢定結果：沒過（${failReason}・三根蠟燭熄滅）`;
+          rhythmWaveLabel.textContent = `檢定失敗（${failReason}）`;
         }
         typewriter.start(
           rhythmDialogueText,
-          "「劇烈的心跳與慌亂已經出賣了你……你根本不是無辜的！」",
+          "「如果真的無辜，為何如此緊張？」",
           44,
         );
         if (rhythmInstructionText) {
           typewriter.start(
             rhythmInstructionText,
-            `沒過（${failReason}）：三根蠟燭熄滅，請繼續告解。`,
+            `檢定失敗（${failReason}），繼續告解。`,
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "繼續告解對話";
+                rhythmActionBtn.textContent = "回到告解";
                 rhythmActionBtn.dataset.outcome = "failure";
                 rhythmActionBtn.hidden = false;
               }
@@ -2327,17 +2348,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (isHit) {
         playTone(587.33, 0.28, "triangle", 0.18, 1.1);
-        if (rhythmHeartBtn) {
-          rhythmHeartBtn.classList.remove("is-hit-pop");
-          void rhythmHeartBtn.offsetWidth;
-          rhythmHeartBtn.classList.add("is-hit-pop");
-          stepTimers.push(
-            setTimeout(
-              () => rhythmHeartBtn.classList.remove("is-hit-pop"),
-              520,
-            ),
-          );
-        }
         rhythmEcg?.classList.add("is-hit");
         stepTimers.push(setTimeout(() => rhythmEcg?.classList.remove("is-hit"), 360));
 
@@ -2367,11 +2377,10 @@ document.addEventListener("DOMContentLoaded", () => {
         phase = "rhythm";
         waveIndex = 0;
         if (rhythmTrackArea) rhythmTrackArea.classList.remove("is-standby");
-        if (rhythmHeartBtn) rhythmHeartBtn.disabled = false;
         if (rhythmActionBtn) rhythmActionBtn.hidden = true;
         if (rhythmInstructionText) {
           rhythmInstructionText.textContent =
-            "心電圖亮點進入淡綠色區域時，點擊紅心或按空白鍵。";
+            "心電圖亮點進入較亮區域時，按空白鍵。";
         }
 
         stepTimers.push(setTimeout(() => startWaveSweep(), 380));
@@ -2405,15 +2414,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (phase !== "intro-dialogue") return;
       e.stopPropagation();
       advanceIntroDialogue();
-    });
-  }
-
-  if (rhythmHeartBtn) {
-    rhythmHeartBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (phase === "rhythm") {
-        rhythmController.triggerHit();
-      }
     });
   }
 
@@ -2487,8 +2487,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const hudTimerCard = document.getElementById("hudTimerCard");
   const timerValueText = document.getElementById("timerValueText");
 
-  const leftDialogueColumn = document.getElementById("leftDialogueColumn");
-  const centerDialogueColumn = document.getElementById("centerDialogueColumn");
+  const excuseDialogues = document.getElementById("excuseDialogues");
   const dialogueControlHint = document.getElementById("dialogueControlHint");
 
   const excuseCharacterImg = document.getElementById("excuseCharacterImg");
@@ -2575,6 +2574,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let fullText = "";
     let targetEl = null;
     let onDoneCallback = null;
+    let onUpdateCallback = null;
 
     function stop() {
       if (timerId !== null) {
@@ -2592,6 +2592,7 @@ document.addEventListener("DOMContentLoaded", () => {
       stop();
       if (targetEl) {
         targetEl.textContent = fullText;
+        if (onUpdateCallback) onUpdateCallback();
       }
       const cb = onDoneCallback;
       onDoneCallback = null;
@@ -2599,12 +2600,13 @@ document.addEventListener("DOMContentLoaded", () => {
       return true;
     }
 
-    function start(el, text, speed = 42, onDone = null, withSound = true) {
+    function start(el, text, speed = 42, onDone = null, withSound = true, onUpdate = null) {
       stop();
       if (!el) return;
       targetEl = el;
       fullText = text;
       onDoneCallback = onDone;
+      onUpdateCallback = onUpdate;
       isTyping = true;
       el.textContent = "";
       el.classList.add("is-typing");
@@ -2624,6 +2626,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const ch = chars[idx++];
         el.textContent += ch;
+        if (onUpdateCallback) onUpdateCallback();
         if (withSound && ch.trim() !== "" && idx % 2 === 1) {
           playTone(540, 0.028, "triangle", 0.028, 0.85);
         }
@@ -2663,36 +2666,42 @@ document.addEventListener("DOMContentLoaded", () => {
   let transitionTimers = [];
 
   // 四題為共用題庫，每次狡辯從中隨機抽取兩題。
+  /* =========================================
+   【新增】狡辯環節固定開場對話
+
+   功能：
+   1. 只在進入狡辯環節時播放一次
+   2. 不受第一題抽到的英文關鍵字影響
+   3. 第二題開始不再重複播放
+
+   left：神父
+   center：玩家角色
+   ========================================= */
+
+const commonDialoguesRounds = [
+  { side: "left", text: "我親愛的教徒。" },
+  { side: "left", text: "在開始之前，我還有些問題想問您。" },
+  { side: "center", text: "當然，神父。" },
+  { side: "center", text: "只要是我知道的，必定知無不言。" },
+];
   const originalRounds = [
     {
       word: "killer",
       dialogues: [
         { side: "left", text: "我親愛的教徒。" },
         { side: "left", text: "您確定對我沒有任何隱瞞？" },
-        { side: "center", text: "當然，我親愛的神父。" },
-        { side: "center", text: "我怎麼能對你說謊呢？" },
-        { side: "center", text: "殺手怎麼能是我呢？" },
-        { side: "center", text: "請不要聽信那些胡言亂語。", separated: true },
+        { side: "center", text: "當然，我的神父。" },
+        { side: "center", text: "我怎麼能對您說謊？" },
+        { side: "center", text: "殺手怎麼可能是我呢？" },
+        { side: "center", text: "請您不要聽信那些胡言亂語。" },
       ],
     },
     {
       word: "weapon",
       dialogues: [
-        {
-          side: "left",
-          text: "那麼，現場遺留的兇器又該作何解釋？",
-          leftSeparated: true,
-        },
-        {
-          side: "center",
-          text: "那不過是祈禱儀式用的器具罷了。",
-          replaceBottom: true,
-        },
-        {
-          side: "center",
-          text: "請不要聽信那些胡言亂語。",
-          replaceBottom: true,
-        },
+        {side: "left",text: "那麼，現場遺留的兇器又該作何解釋？"},
+        {side: "center",text: "那不過是祈禱儀式用的器具罷了。"},
+        {side: "center",text: "請不要聽信那些胡言亂語。",},
       ],
     },
   ];
@@ -2706,27 +2715,18 @@ document.addEventListener("DOMContentLoaded", () => {
         { side: "center", text: "神父，您誤會了！" },
         { side: "center", text: "我只是去整理陳年的酒桶。" },
         { side: "center", text: "根本沒有您說的任何屍體。" },
-        { side: "left", text: "在主面前，謊言無所遁形。", separated: true },
+        { side: "left", text: "在主面前，謊言無所遁形。" },
         {
           side: "center",
           text: "請相信我，那只是腐壞的木屑味！",
-          separated: true,
         },
       ],
     },
     {
       word: "enigma",
       dialogues: [
-        {
-          side: "left",
-          text: "你的說辭處處充滿矛盾的謎團。",
-          replaceSeparated: true,
-        },
-        {
-          side: "center",
-          text: "一切都只是巧合，我對主發誓！",
-          replaceSeparated: true,
-        },
+        {side: "left",text: "你的說辭處處充滿矛盾的謎團。",},
+        {side: "center",text: "一切都只是巧合，我對主發誓！",},
       ],
     },
   ];
@@ -2857,36 +2857,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // 氣泡對話生成與打字機推進
   // =========================================
   function appendSpeechBubble(item, onComplete) {
+    if (!excuseDialogues) return;
     const isLeft = item.side === "left";
-    const container = isLeft ? leftDialogueColumn : centerDialogueColumn;
-    if (!container) return;
-
-    let bubbleEl = null;
-    if (item.replaceSeparated) {
-      const separatedClass = isLeft ? "is-left-separated" : "is-separated";
-      bubbleEl = container.querySelector(`.speech-bubble.${separatedClass}`);
-    }
-    if (item.replaceBottom) {
-      bubbleEl =
-        bubbleEl || container.querySelector(".speech-bubble.is-separated");
-    }
-
-    if (!bubbleEl) {
-      bubbleEl = document.createElement("div");
-      bubbleEl.className = `speech-bubble ${isLeft ? "is-left" : "is-right"}`;
-      if (item.separated) {
-        bubbleEl.classList.add(isLeft ? "is-left-separated" : "is-separated");
-      }
-      if (item.leftSeparated) bubbleEl.classList.add("is-left-separated");
-
-      const textSpan = document.createElement("span");
-      textSpan.className = "speech-bubble-text";
-      bubbleEl.appendChild(textSpan);
-      container.appendChild(bubbleEl);
-    }
-
-    const textEl = bubbleEl.querySelector(".speech-bubble-text");
-    typewriter.start(textEl, item.text, 40, onComplete, true);
+    const bubbleEl = document.createElement("div");
+    bubbleEl.className = `speech-bubble ${isLeft ? "is-left" : "is-right"}`;
+    bubbleEl.setAttribute("role", "group");
+    bubbleEl.setAttribute("aria-label", isLeft ? "神父" : "教徒");
+    const textEl = document.createElement("span");
+    textEl.className = "speech-bubble-text";
+    bubbleEl.appendChild(textEl);
+    excuseDialogues.appendChild(bubbleEl);
+    const scrollToLatest = () => {
+      excuseDialogues.scrollTop = excuseDialogues.scrollHeight;
+    };
+    typewriter.start(textEl, item.text, 40, onComplete, true, scrollToLatest);
   }
 
   function playDialogueStep(idx) {
@@ -3125,12 +3109,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     currentRoundIndex = 0;
     dialogueStepIndex = 0;
-    activeDialogueList = rounds[0].dialogues;
+    activeDialogueList = [...commonDialoguesRounds, ...rounds[0].dialogues];
     remainingTime = ROUND_TIME_LIMIT;
     updateTimerUI();
 
-    if (leftDialogueColumn) leftDialogueColumn.innerHTML = "";
-    if (centerDialogueColumn) centerDialogueColumn.innerHTML = "";
+    if (excuseDialogues) excuseDialogues.replaceChildren();
     if (excuseActionBtn) {
       excuseActionBtn.hidden = true;
       excuseActionBtn.disabled = false;
@@ -3170,6 +3153,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (excuseActionBtn) {
     excuseActionBtn.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (typewriter.finishImmediately()) return;
       excuseActionBtn.disabled = true;
       const success = excuseActionBtn.dataset.success === "true";
       phase = "inactive";
