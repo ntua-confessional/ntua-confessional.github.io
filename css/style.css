@@ -1589,6 +1589,96 @@ body {
     height: auto;
 }
 
+.howto-typing-letter {
+    font-family: sans-serif;
+    font-size: 23px;
+    fill: transparent;
+    stroke: #c8ccef;
+    stroke-width: 1.2;
+    stroke-dasharray: 2 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.special-howto-scene.is-active .howto-typing-letter {
+    animation: howtoLetterTyped 5s steps(1, end) infinite;
+}
+
+.special-howto-scene.is-active .howto-typing-letter:nth-of-type(2) {
+    animation-name: howtoLetterTypedSecond;
+}
+
+.special-howto-scene.is-active .howto-typing-letter:nth-of-type(3) {
+    animation-name: howtoLetterTypedThird;
+}
+
+.special-howto-scene.is-active .howto-ecg-cursor {
+    animation: howtoEcgScan 3.3s ease-in-out infinite;
+}
+
+@keyframes howtoLetterTyped {
+    0%, 19%, 90%, 100% {
+        fill: transparent;
+        stroke: #c8ccef;
+        stroke-dasharray: 2 2;
+    }
+    20%, 89% {
+        fill: #7ee081;
+        stroke: #c5ffd0;
+        stroke-dasharray: none;
+    }
+}
+
+@keyframes howtoLetterTypedSecond {
+    0%, 31%, 90%, 100% {
+        fill: transparent;
+        stroke: #c8ccef;
+        stroke-dasharray: 2 2;
+    }
+    32%, 89% {
+        fill: #7ee081;
+        stroke: #c5ffd0;
+        stroke-dasharray: none;
+    }
+}
+
+@keyframes howtoLetterTypedThird {
+    0%, 43%, 90%, 100% {
+        fill: transparent;
+        stroke: #c8ccef;
+        stroke-dasharray: 2 2;
+    }
+    44%, 89% {
+        fill: #7ee081;
+        stroke: #c5ffd0;
+        stroke-dasharray: none;
+    }
+}
+
+@keyframes howtoEcgScan {
+    0% { transform: translateX(0); stroke: #fff; filter: none; opacity: 1; }
+    73.636364% { transform: translateX(137px); stroke: #fff; filter: none; opacity: 1; }
+    78.787879%, 100% {
+        transform: translateX(146px);
+        stroke: #fff3d6;
+        filter: drop-shadow(0 0 4px #ffda92) drop-shadow(0 0 8px #d9ad67);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .howto-typing-letter {
+        fill: #7ee081;
+        stroke: #c5ffd0;
+        stroke-dasharray: none;
+    }
+
+    .howto-ecg-cursor {
+        transform: translateX(146px);
+        filter: drop-shadow(0 0 4px #ffda92);
+    }
+}
+
 .special-howto-scene .howto-desc {
     white-space: normal;
     line-height: 1.65;
@@ -2181,6 +2271,14 @@ body {
     height: 0;
     border-top: 10px solid transparent;
     border-bottom: 10px solid transparent;
+}
+
+.question-bubble::after {
+    bottom: 3px;
+}
+
+.question-bubble.is-fill-in::after {
+    bottom: 1px;
 }
 
 .question-bubble.left::after,
@@ -2949,7 +3047,9 @@ body {
 .wave-pips {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  margin-top: 8px;
 }
 
 .wave-pip {
@@ -3057,21 +3157,20 @@ body {
 }
 
 
-/* 掃描虛線 */
+/* 掃描線 */
 .rhythm-ecg-cursor>line:first-child {
-  stroke-width: 2.5px;
-  stroke-dasharray: 4 4;
+  stroke-width: 1.2px;
   opacity: 0.95;
 }
 
 
 /* 掃描圓點 */
 .rhythm-ecg-cursor .rhythm-ecg-dot {
-  stroke-width: 11px;
+  stroke-width: 6px;
   stroke-linecap: round;
   filter:
-    drop-shadow(0 0 4px #ffe8b6)
-    drop-shadow(0 0 9px rgba(255, 202, 120, 0.7));
+    drop-shadow(0 0 2px #ffe8b6)
+    drop-shadow(0 0 5px rgba(255, 202, 120, 0.7));
 }
 
 
@@ -3572,12 +3671,12 @@ body {
 }
 
 /* =========================================
-   1. 右上角狡辯倒數 HUD
+   1. 操作框右上方狡辯倒數 HUD
    ========================================= */
 .excuse-hud {
   position: absolute;
-  top: 3.8%;
-  right: calc(3.2% + 120px);
+  right: 10.6%;
+  bottom: calc(5.6% + clamp(148px, 23.5vh, 210px) + 10px);
   z-index: 10;
   display: flex;
   align-items: center;
@@ -3725,9 +3824,7 @@ body {
   }
 }
 
-/* =========================================
-   3. 右側角色立繪
-   ========================================= */
+/*3. 右側角色立繪*/
 .excuse-character-wrap {
   position: absolute;
   right: 0;
@@ -3763,6 +3860,41 @@ body {
   filter: contrast(1.05) brightness(1.06);
 }
 
+/*3. 左側神父剪影*/
+.excuse-shadow-wrap {
+  position: absolute;
+  right: 100px;
+  bottom: -20px;
+  z-index: 4;
+  height: 105vh;
+  aspect-ratio: 16 / 9;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-200px);
+  transition:
+    opacity 0.85s ease 0.2s,
+    transform 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
+}
+
+.excuse-scene.is-active .excuse-shadow-wrap {
+  opacity: 0.8;
+  transform: translateX(0);
+}
+
+.excuse-shadow-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: right bottom;
+  -webkit-user-drag: none;
+}
+
+/* 濾除角色立繪的純黑背景，保留線條與紫藍色調 */
+.excuse-shadow-img.is-black-bg {
+  mix-blend-mode: lighten;
+  filter: contrast(1.05) brightness(1.06);
+}
 /* =========================================
    4. 左下角七支蠟燭素材（IMG_8976.PNG）
    ========================================= */
@@ -4172,21 +4304,12 @@ body {
 .dialogue.is-visible{opacity:1;transform:translateX(0)}
 .dialogue.is-speaking span::after{content:"";position:absolute;display:inline-block;width:2px;height:1em;background:currentColor;vertical-align:-.1em;margin-left:5px;animation:cursorBlink .8s steps(1) infinite}
 
-.prison{position:absolute;inset:-2px;z-index:4;pointer-events:none;perspective:900px}
-
-.gate{position:absolute;top:0;width:50%;height:100%;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(16.666% - 14px),#080a11 calc(16.666% - 14px),#414350 calc(16.666% - 10px),#131520 calc(16.666% - 5px),#070811 16.666%);border-block:clamp(14px,3vh,28px) solid #151621;box-shadow:inset 0 1px #67647c,0 0 35px #0006;transition:transform 1.65s cubic-bezier(.6,0,.3,1)}
-.gate::before,.gate::after{content:"";position:absolute;left:0;right:0;height:16px;background:linear-gradient(#53505f,#171722 35%,#080912);box-shadow:0 5px 10px #0007}.gate::before{top:23%}.gate::after{bottom:20%}
-.gate-left{left:0;transform:translateX(-105%);border-right:12px solid #181924}.gate-right{right:0;transform:translateX(105%);border-left:12px solid #181924}
-
-.lock{position:absolute;z-index:1;right:-28px;top:48%;width:44px;height:64px;border-radius:6px;background:linear-gradient(110deg,#6b6572,#23232c 60%);border:2px solid #11121b;box-shadow:3px 5px 10px #0008}
-.lock::after{content:"";position:absolute;left:17px;top:23px;width:7px;height:18px;border-radius:50% 50% 2px 2px;background:#070710}
-
-.ending.is-closing .gate{transform:translateX(0)}
-.ending.is-closing .portrait{filter:brightness(.42) saturate(.65);opacity:.65}
+.ending.is-closing .portrait,
+.ending.is-departed .escape-camera,
+.concealed-ending.is-concealed .concealed-art{filter:brightness(.42) saturate(.65);opacity:.65}
 .ending.is-closing .dialogues{transition:opacity 1.4s;opacity:0}
 
 .vignette{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at 40% 42%,transparent 20%,#090a2455 65%,#030511cb 110%);transition:background 2s}
-.ending.is-locked{animation:gateImpact .48s ease-out}
 .verdict{position:absolute;z-index:6;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#0d10255c;opacity:0;visibility:hidden;transition:opacity 1.8s}
 .verdict.is-visible{opacity:1;visibility:visible}.eyebrow{font-size:12px;letter-spacing:.35em;color:#b1a4ce}.verdict h1{font-size:clamp(25px,4vw,54px);font-weight:400;letter-spacing:.16em;margin:20px 0}.verdict-copy{color:#c2bed0;font-size:14px;line-height:2.2;letter-spacing:.12em}
 .verdict button,.sound-control{border:1px solid #c7bdd752;background:#24233d9c;border-radius:30px;padding:10px 22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.verdict button{margin-top:22px}
@@ -4200,20 +4323,18 @@ body {
 @keyframes lightDrift{to{transform:translateX(8%) rotate(4deg);opacity:.45}}
 @keyframes floatDust{0%{transform:translate(0,35px);opacity:0}25%{opacity:.3}80%{opacity:.12}100%{transform:translate(25px,-100px);opacity:0}}
 @keyframes cursorBlink{50%{opacity:0}}
-@keyframes gateImpact{0%,100%{transform:translate(0)}20%{transform:translate(-5px,3px)}45%{transform:translate(4px,-2px)}70%{transform:translate(-2px,1px)}}
 @media(max-aspect-ratio:1/1){.portrait img{object-position:30% center}.dialogues{top:47%;right:4%;width:86%;gap:20px}.dialogue{font-size:clamp(14px,3.4vw,21px);min-height:58px;background:transparent}.verdict{padding:24px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.portrait{opacity:1}.dust,.light{display:none}}
 
 .ending-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin:22px 20px 0}.ending-actions button{margin:0}
 /* 第二結局：素材原有三層分開呈現，人物與前景可獨立晃動。 */
-.escape-camera{position:absolute;inset:0;transform:scale(1.025);animation:escapeEnter 1.8s ease-out both}
+.escape-camera{position:absolute;inset:0;transform:scale(1.025);animation:escapeEnter 1.8s ease-out both;transition:filter 2.5s,opacity 2.5s}
 .layer{position:absolute;inset:0}.layer img{width:100%;height:100%;object-fit:contain;object-position:center}
 .character{transform-origin:27% 83%;animation:carSway 5.6s ease-in-out infinite alternate}
 .seat{animation:seatSway 4.6s ease-in-out infinite alternate}
 [data-ending="escape"] .dialogues{top:13%;right:7%;width:46%;gap:clamp(18px,5vh,58px)}
 [data-ending="escape"] .dialogue:nth-child(2){margin-left:7%}[data-ending="escape"] .dialogue:nth-child(3){margin-left:10%}
-.blackout{position:absolute;inset:0;z-index:5;pointer-events:none;background:#090a20;opacity:0;transition:opacity .7s}
-.ending.is-departed .escape-camera{animation:none;opacity:0}
+.ending.is-departed .escape-camera{animation:none}
 
 @keyframes escapeEnter{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:scale(1.025)}}
 @keyframes carSway{to{transform:translateY(-3px) rotate(.35deg)}}
@@ -4224,8 +4345,6 @@ body {
 .back-to-first{margin-top:16px;color:#c8bfd9;font-size:13px;text-underline-offset:5px}.back-to-first:focus-visible{outline:2px solid #f1c5e9;outline-offset:6px}
 
 .ending[hidden] { display: none; }
-
-.ending.is-departed .blackout { opacity: 1; }
 
 .escape-art-defs { position: absolute; }
 .layer svg { display: block; width: 100%; height: 100%; }
@@ -4282,232 +4401,16 @@ body {
   100% { transform: scale(1.09) translate(-2%, 0); }
 }
 
-.starfire {
-  position: absolute;
-  z-index: 4;
-  inset: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.starfire > div, .blast > div { position: absolute; inset: 0; }
-
-.ending.is-burning .starfire,
-.ending.is-exploding .starfire { visibility: visible; }
-
-.starfire-glow {
-  opacity: 0;
-  background: radial-gradient(ellipse at 50% 50%, #ffb45b9c, #d7482466 35%, transparent 66%);
-  mix-blend-mode: screen;
-}
-
-.starfire-smoke {
-  opacity: 0;
-  background:
-    radial-gradient(ellipse at 28% 17%, #18101dec 1%, transparent 33%),
-    radial-gradient(ellipse at 58% 23%, #23191fee 8%, transparent 44%),
-    radial-gradient(ellipse at 49% 53%, #41292bea 6%, transparent 48%);
-  filter: blur(15px);
-  transform-origin: 38% 75%;
-}
-
-.starfire-flames {
-  opacity: 0;
-}
-
-.fire-front {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.fire-sheet {
-  position: absolute;
-  inset: 0;
-  transform: translateY(78%);
-  background: linear-gradient(
-    to top, #25100a 5%, #822311ee 28%, #c8391bc9 43%, #ff9c3c75 51%, transparent 68%
-  );
-}
-
-.fire-sheet::after {
-  content: "";
-  position: absolute;
-  inset: 99% 0 auto;
-  height: 100%;
-  background: #25100a;
-}
-
-.fire-sheet i {
-  position: absolute;
-  left: var(--x);
-  bottom: 35%;
-  width: clamp(28px, 10%, 155px);
-  height: var(--height);
-  margin-left: clamp(-76px, -5%, -14px);
-  transform-origin: 50% 100%;
-  border-radius: 64% 36% 57% 43% / 83% 66% 34% 17%;
-  background: linear-gradient(to top, #ff742400, #ffc164 23%, #fff0af 34%, #ff882e 58%, #ef401eac 78%, #ab251400);
-  mix-blend-mode: screen;
-  filter: blur(4px);
-}
-
-.starfire-sparks i {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: var(--size);
-  aspect-ratio: 1;
-  opacity: 0;
-  color: #ffae44;
-  filter: drop-shadow(0 0 5px currentColor);
-}
-
-.starfire-sparks i::before {
-  content: "";
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: #fff1b6;
-  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
-}
-
-.ending.is-burning .starfire-glow { animation: burnLight 4.4s ease both; }
-.ending.is-burning .starfire-smoke { animation: smokeRise 4.4s ease-out both; }
-.ending.is-burning .starfire-flames { opacity: 1; }
-.ending.is-burning .fire-sheet { animation: spreadFlame 4.4s ease-in-out both; }
-.ending.is-burning .fire-sheet i {
-  animation: flameFlicker var(--flicker) var(--offset) ease-in-out infinite alternate;
-}
-.ending.is-burning .starfire-sparks i { animation: sparkRise 1.45s var(--delay) ease-out both; }
-.ending.is-burning .escape-camera { animation: charCarriage 4.4s ease both; }
-
-@keyframes burnLight {
-  0% { opacity: 0; }
-  32% { opacity: .4; }
-  69% { opacity: .86; }
-  100% { opacity: 1; }
-}
-
-@keyframes smokeRise {
-  0% { opacity: 0; transform: translateY(23%) scale(.65); }
-  28% { opacity: .17; }
-  100% { opacity: .86; transform: translateY(-8%) scale(1.2); }
-}
-
-@keyframes spreadFlame {
-  0% { opacity: 0; transform: translateY(75%); }
-  14% { opacity: .8; transform: translateY(54%); }
-  43% { opacity: .93; transform: translateY(31%); }
-  73% { opacity: 1; transform: translateY(6%); }
-  100% { opacity: 1; transform: translateY(-36%); }
-}
-
-@keyframes flameFlicker {
-  0% { transform: skewX(-11deg) scale(.87, .79); opacity: .58; }
-  55% { transform: skewX(4deg) scale(1.03, 1.08); opacity: .88; }
-  100% { transform: skewX(12deg) scale(.78, .94); opacity: .68; }
-}
-
-@keyframes sparkRise {
-  0% { opacity: 0; transform: translateY(8px) scale(.65); }
-  22% { opacity: 1; }
-  100% { opacity: 0; transform: translate(var(--drift), -53vh) rotate(90deg) scale(.27); }
-}
-
-@keyframes charCarriage {
-  0% { transform: scale(1.09) translateX(-2%); filter: none; }
-  55% { filter: sepia(.42) brightness(.95); }
-  100% { transform: scale(1.09) translateX(-2%); filter: sepia(.75) brightness(.6) contrast(1.24); }
-}
-
-.blast { visibility: hidden; }
-.ending.is-exploding .blast { visibility: visible; }
-.ending.is-exploding .starfire-flames { animation: fireAfterFlash .36s ease-out both; }
-.ending.is-exploding .fire-sheet { transform: translateY(-36%); }
-
-@keyframes fireAfterFlash { from { opacity: 1; } to { opacity: 0; } }
-.ending.is-exploding .escape-camera { animation: blastImpact 1.05s ease-out both; }
-.ending.is-exploding .starfire-smoke { animation: afterBlast 1.05s ease-out both; }
-
-.blast-light {
-  background: radial-gradient(ellipse at 50% 50%, #fff3c7 1%, #ffc65f 11%, #e34e22b3 29%, #aa281b3b 52%, transparent 68%);
-}
-
-.ending.is-exploding .blast-light { animation: blastLight 1.05s ease-out both; }
-
-.blast .blast-ring {
-  inset: auto;
-  top: 50%;
-  left: 50%;
-  width: 14vmin;
-  aspect-ratio: 1;
-  border: 2px solid #ffcb7d;
-  border-radius: 50%;
-  box-shadow: 0 0 18px #ff793d;
-}
-
-.ending.is-exploding .blast-ring { animation: blastRing .75s ease-out both; }
-
-.blast-embers i {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 11px;
-  height: 3px;
-  background: #ffbb63;
-  box-shadow: 0 0 7px #ff7b38;
-}
-
-.ending.is-exploding .blast-embers i { animation: blastEmber .85s ease-out both; }
-
-@keyframes blastLight {
-  0% { opacity: .6; transform: scale(.8); }
-  12% { opacity: 1; transform: scale(1.18); }
-  100% { opacity: 0; transform: scale(1.45); }
-}
-
-@keyframes blastRing {
-  0% { opacity: .75; transform: translate(-50%, -50%) scale(.4); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(6); }
-}
-
-@keyframes blastEmber {
-  0% { opacity: 1; transform: rotate(var(--spin)); }
-  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--spin)) scale(.3); }
-}
-
-@keyframes blastImpact {
-  0% { opacity: 1; transform: scale(1.09) translateX(-2%); filter: sepia(.75) brightness(.6) contrast(1.24); }
-  12% { transform: translate(-1.5%, 1%) scale(1.07); filter: brightness(.35); }
-  30% { transform: translate(1%, -.5%) scale(1.055); }
-  100% { opacity: 0; transform: scale(1.06); filter: brightness(.2); }
-}
-
-@keyframes afterBlast {
-  from { opacity: .85; transform: scale(1.15); }
-  to { opacity: 0; transform: translateY(-13%) scale(1.55); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ending.is-burning .starfire-glow,
-  .ending.is-burning .starfire-flames { opacity: .64; }
-  .ending.is-burning .fire-sheet { transform: translateY(27%); }
-  .ending.is-exploding .escape-camera { opacity: .22; }
-  .ending.is-exploding .blast-light { opacity: .36; }
-  .blast-ring, .blast-embers { visibility: hidden; }
-}
-
 /* 第三種結局：祈禱的身影、狼影與真面目。 */
 .concealed-ending {
   background: #27265e;
 }
 
-.concealed-art,
-.concealed-curtain {
+.concealed-art {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  transition: filter 2.5s, opacity 2.5s;
 }
 
 .concealed-art img {
@@ -4578,18 +4481,6 @@ body {
   min-height: clamp(42px, 9vh, 76px);
   font-size: clamp(13px, 1.65vw, 26px);
   letter-spacing: .12em;
-}
-
-.concealed-curtain {
-  z-index: 5;
-  transform: scaleX(0);
-  transform-origin: right;
-  background: linear-gradient(90deg, transparent, #110f2d 44%, #100e26);
-  transition: transform 1.4s cubic-bezier(.45, 0, .3, 1);
-}
-
-.concealed-ending.is-concealed .concealed-curtain {
-  transform: scaleX(1.8);
 }
 
 .concealed-ending.is-concealed .dialogues {

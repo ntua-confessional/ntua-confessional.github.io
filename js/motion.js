@@ -3193,9 +3193,7 @@ const commonDialoguesRounds = [
     travel: 2300,
     shadow: 420,
     emptyCar: 1100,
-    fire: 4400,
-    blast: 1050,
-    blackout: 720
+    verdictDelay: 720
   };
 
   const endingDetails = {
@@ -3212,7 +3210,7 @@ const commonDialoguesRounds = [
     const status = find('status');
     // 修改三個 .dialogue 的 data-text 即可更換對話。
     let index = -1, state = 'ready', chars = [], cursor = 0;
-    let typingTimer, nextTimer, closeTimer, verdictTimer, departTimer, fireTimer, railTimer;
+    let typingTimer, nextTimer, closeTimer, verdictTimer, departTimer, railTimer;
     const voice = () => {
       const audio = gameAudio.context;
       if (!audio || audio.state !== 'running') return;
@@ -3223,18 +3221,6 @@ const commonDialoguesRounds = [
       oscillator.connect(gain).connect(gameAudio.output);
       oscillator.start(); oscillator.stop(audio.currentTime + .04);
     };
-    function impact() {
-      const audio = gameAudio.context;
-      if (!audio || audio.state !== 'running') return;
-      [64, 113, 207].forEach((frequency, i) => {
-        const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
-        o.type = 'triangle'; o.frequency.setValueAtTime(frequency, t);
-        o.frequency.exponentialRampToValueAtTime(frequency / 2, t + .7);
-        g.gain.setValueAtTime(.08 / (i + 1), t);
-        g.gain.exponentialRampToValueAtTime(.001, t + 1.1);
-        o.connect(g).connect(gameAudio.output); o.start(t); o.stop(t + 1.2);
-      });
-    }
     function finishLine() {
       clearTimeout(typingTimer);
       const line = lines[index];
@@ -3275,15 +3261,9 @@ const commonDialoguesRounds = [
       }));
     }
 
-    function closePrison() {
+    function finishPrison() {
       root.classList.add('is-closing');
-      status.textContent = '牢門正在關閉。';
-      closeTimer = setTimeout(() => {
-        root.classList.add('is-locked');
-        impact();
-        status.textContent = '牢門已鎖上。';
-        verdictTimer = setTimeout(showVerdict, reduced.matches ? 0 : 800);
-      }, reduced.matches ? 0 : 1650);
+      verdictTimer = setTimeout(showVerdict, reduced.matches ? 0 : 1400);
     }
 
     function playEscape() {
@@ -3302,19 +3282,8 @@ const commonDialoguesRounds = [
           departTimer = setTimeout(() => {
             clearInterval(railTimer);
             root.classList.remove('is-traveling');
-            root.classList.add('is-burning');
-            status.textContent = '火焰從車廂底部往上延燒。';
-
-            fireTimer = setTimeout(() => {
-              root.classList.replace('is-burning', 'is-exploding');
-              status.textContent = '列車在火光中爆炸。';
-              impact();
-
-              fireTimer = setTimeout(() => {
-                root.classList.replace('is-exploding', 'is-departed');
-                verdictTimer = setTimeout(showVerdict, calm ? 0 : escapeDurations.blackout);
-              }, calm ? 400 : escapeDurations.blast);
-            }, calm ? 750 : escapeDurations.fire);
+            root.classList.add('is-departed');
+            verdictTimer = setTimeout(showVerdict, calm ? 0 : escapeDurations.verdictDelay);
           }, calm ? 650 : escapeDurations.emptyCar);
         }, calm ? 0 : escapeDurations.shadow);
       }, calm ? 750 : escapeDurations.travel);
@@ -3331,7 +3300,7 @@ const commonDialoguesRounds = [
       if (state === 'typing') return;
       if (index === lines.length - 1) {
         state = 'closing';
-        if (name === 'prison') closePrison();
+        if (name === 'prison') finishPrison();
         else if (name === 'escape') playEscape();
         else leaveConfession();
         return;
@@ -3343,11 +3312,11 @@ const commonDialoguesRounds = [
       if (reduced.matches || !chars.length) finishLine(); else typeNext();
     }
     function reset() {
-      [typingTimer, nextTimer, closeTimer, verdictTimer, departTimer, fireTimer].forEach(clearTimeout);
+      [typingTimer, nextTimer, closeTimer, verdictTimer, departTimer].forEach(clearTimeout);
       clearInterval(railTimer);
       index = -1; state = 'ready';
       delete root.dataset.dialogueStep;
-      root.classList.remove('is-concealed', 'is-traveling', 'is-passing-shadow', 'is-empty', 'is-departed', 'is-burning', 'is-exploding', 'is-closing', 'is-locked');
+      root.classList.remove('is-concealed', 'is-traveling', 'is-passing-shadow', 'is-empty', 'is-departed', 'is-closing');
       verdict.classList.remove('is-visible'); verdict.inert = true;
       lines.forEach(line => {line.classList.remove('is-visible', 'is-speaking');line.querySelector('span').textContent = '';});
       status.textContent = '';
@@ -3360,42 +3329,6 @@ const commonDialoguesRounds = [
     find('replay').addEventListener('click', start);
     root.querySelector('.back-to-intro').addEventListener('click', () => window.location.reload());
     controllers.set(name, { start, reset });
-    const fire = root.querySelector('.starfire');
-    if (fire) {
-      for (const sheet of fire.querySelectorAll('.fire-sheet')) {
-        for (let i = 0; i < 22; i++) {
-          const flame = document.createElement('i');
-          flame.style.setProperty('--x', `${(i / 21) * 100}%`);
-          flame.style.setProperty('--height', `${13 + Math.random() * 17}%`);
-          flame.style.setProperty('--flicker', `${0.35 + Math.random() * 0.48}s`);
-          flame.style.setProperty('--offset', `${-Math.random()}s`);
-          sheet.append(flame);
-        }
-      }
-
-      const sparks = fire.querySelector('.starfire-sparks');
-      for (let i = 0; i < 52; i++) {
-        const spark = document.createElement('i');
-        spark.style.setProperty('--x', `${4 + Math.random() * 92}%`);
-        spark.style.setProperty('--y', `${85 + Math.random() * 15}%`);
-        spark.style.setProperty('--size', `${2 + Math.random() * 8}px`);
-        spark.style.setProperty('--delay', `${i * .065}s`);
-        spark.style.setProperty('--drift', `${Math.round(Math.random() * 170 - 65)}px`);
-        sparks.append(spark);
-      }
-
-      const burst = fire.querySelector('.blast-embers');
-      for (let i = 0; i < 32; i++) {
-        const ember = document.createElement('i');
-        const angle = (i / 32) * Math.PI * 2;
-        const distance = 12 + Math.random() * 32;
-        ember.style.setProperty('--dx', `${Math.cos(angle) * distance}vmin`);
-        ember.style.setProperty('--dy', `${Math.sin(angle) * distance}vmin`);
-        ember.style.setProperty('--spin', `${angle}rad`);
-        burst.append(ember);
-      }
-    }
-
     const dust = root.querySelector('.dust');
     for (let i = 0; i < 22; i++) {
       const speck = document.createElement('i');

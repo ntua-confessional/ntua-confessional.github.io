@@ -430,7 +430,7 @@
                             <rect x="8" y="12" width="244" height="76" rx="8" fill="#17183e" stroke="#969bdd" stroke-width="2" />
                             <rect x="151" y="13" width="35" height="74" fill="#9fa6f2" opacity=".3" />
                             <path d="M20 53 H55 L65 43 L75 62 L87 28 L99 70 L111 53 H135 L145 44 L155 59 L166 30 L177 53 H240" fill="none" stroke="#b9f4d0" stroke-width="3" stroke-linejoin="round" />
-                            <circle cx="166" cy="30" r="5" fill="#fff" />
+                            <line class="howto-ecg-cursor" x1="20" y1="13" x2="20" y2="87" stroke="#fff" stroke-width="1.2" />
                         </svg>
                     </div>
                     <div class="howto-arrow" aria-hidden="true">
@@ -444,7 +444,9 @@
                     <div class="howto-graphic special-howto-graphic" aria-hidden="true">
                         <svg viewBox="0 0 260 100" xmlns="http://www.w3.org/2000/svg">
                             <rect x="8" y="12" width="244" height="76" rx="8" fill="#17183e" stroke="#969bdd" stroke-width="2" />
-                            <text x="130" y="43" fill="#f4f5fc" font-size="23" text-anchor="middle" font-family="sans-serif" letter-spacing="8">A B C</text>
+                            <text class="howto-typing-letter" x="77" y="43" text-anchor="middle">A</text>
+                            <text class="howto-typing-letter" x="130" y="43" text-anchor="middle">B</text>
+                            <text class="howto-typing-letter" x="183" y="43" text-anchor="middle">C</text>
                             <path d="M63 53 H91 M116 53 H144 M169 53 H197" stroke="#9fa6f2" stroke-width="3" />
                             <rect x="30" y="68" width="200" height="5" rx="2.5" fill="#656ca6" />
                             <rect x="30" y="68" width="125" height="5" rx="2.5" fill="#ffb84d" />
@@ -680,12 +682,6 @@
     <div class="rhythm-track-area is-standby" id="rhythmTrackArea">
         <div class="rhythm-wave-status" aria-label="心跳穩定進度">
             <span class="wave-label" id="rhythmWaveLabel">等待對話結束…</span>
-            <div class="wave-pips" id="rhythmWavePips">
-                <span class="wave-pip is-current"></span>
-                <span class="wave-pip"></span>
-                <span class="wave-pip"></span>
-                <span class="wave-pip"></span>
-            </div>
         </div>
         <div class="rhythm-ecg" id="rhythmEcg" aria-hidden="true">
             <div class="rhythm-ecg-window" id="rhythmEcgWindow"></div>
@@ -703,6 +699,12 @@
                     <line class="rhythm-ecg-dot" id="rhythmEcgDot" x1="0" x2="0.01" y1="76" y2="76" />
                 </g>
             </svg>
+        </div>
+        <div class="wave-pips" id="rhythmWavePips" aria-label="心跳校準次數">
+            <span class="wave-pip is-current"></span>
+            <span class="wave-pip"></span>
+            <span class="wave-pip"></span>
+            <span class="wave-pip"></span>
         </div>
         <div class="rhythm-judgment" id="rhythmJudgment" aria-live="polite"></div>
     </div>
@@ -774,6 +776,11 @@
             src="./images/PC_B/PC_talk.PNG" alt="男角色神情" />
     </div>
 
+    <div class="excuse-shadow-wrap" id="excuseShadowWrap">
+        <img class="excuse-shadow-img is-black-bg" id="excuseShadowImg" 
+            src="./images/bg/shadow.PNG" alt="神父剪影" />
+    </div>
+
     <div class="excuse-candles-wrap" id="excuseCandlesWrap" aria-label="燭火狀態">
         <img class="excuse-candles-img" id="excuseCandlesImg"
             src="./images/bg/IMG_8976.PNG" alt="七支蠟燭" />
@@ -804,10 +811,6 @@
       <p class="dialogue" data-text="我無法信任您。"><span></span></p>
       <p class="dialogue" data-text="祝您在監獄的生活愉快。"><span></span></p>
     </section>
-    <div class="prison" aria-hidden="true">
-      <div class="gate gate-left"><i class="lock"></i></div>
-      <div class="gate gate-right"></div>
-    </div>
     <div class="vignette" aria-hidden="true"></div>
     <section class="verdict" aria-labelledby="prison-endingTitle" inert>
       <p class="eyebrow">ENDING 01 · 信任崩解</p>
@@ -839,20 +842,6 @@
       <div class="seat layer"><img src="./images/bg/2-bg-seat.PNG" alt="車廂座位前"></div>
     </div>
     <div class="passing-shadow" aria-hidden="true"></div>
-    <div class="starfire" aria-hidden="true">
-      <div class="starfire-glow"></div>
-      <div class="starfire-smoke"></div>
-      <div class="starfire-flames">
-        <div class="fire-front fire-front-bottom"><div class="fire-sheet"></div></div>
-      </div>
-      <div class="starfire-sparks"></div>
-      <div class="blast">
-        <div class="blast-light"></div>
-        <div class="blast-ring"></div>
-        <div class="blast-embers"></div>
-      </div>
-    </div>
-    <div class="blackout" aria-hidden="true"></div>
     <div class="light" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true"></div>
     <section class="dialogues" aria-label="逃離之後的獨白">
@@ -886,7 +875,6 @@
       <p class="dialogue" data-text="感謝您成為我的刀下亡魂"><span></span></p>
       <p class="dialogue" data-text="……我親愛的神父"><span></span></p>
     </section>
-    <div class="concealed-curtain" aria-hidden="true"></div>
     <section class="verdict" aria-labelledby="concealed-endingTitle" inert>
       <p class="eyebrow">ENDING 03 · 無人識破</p>
       <h1 id="concealed-endingTitle">告解結束，祕密仍在。</h1>
