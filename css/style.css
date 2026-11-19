@@ -2050,8 +2050,8 @@ body {
 }
 
 @keyframes questionNpcLeftEntrance {
-    0% { opacity: 0; }
-    45%, 100% { opacity: 1; }
+    0%, 20% { opacity: 0; }
+    65%, 100% { opacity: 1; }
 }
 
 @keyframes questionNpcRightEntrance {
@@ -2189,7 +2189,7 @@ body {
     position: absolute;
     z-index: 0;
     inset: -56.1% -6.6% -31.6% -6.5%;
-    background: url("../images/bg/Decoration.png") center / 100% 100% no-repeat;
+    background: url("../images/bg/Decoration.PNG") center / 100% 100% no-repeat;
     filter: grayscale(1) brightness(.78);
     pointer-events: none;
 }
