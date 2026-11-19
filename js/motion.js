@@ -1077,15 +1077,15 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         {
           side: "left",
-          text: "那麼，就說說你的生意吧",
+          text: "那麼，就說說你的生意吧。",
         },
         {
           side: "right",
-          text: "您也對這些感興趣嗎？好的，不過請先容我說完這部分",
+          text: "您也對這些感興趣嗎？好的，不過請先容我說完這部分。",
         },
         {
           side: "right",
-          text: "我跟奈克相談甚歡，後來去了酒吧，也許是因為命案的緣故，店裡實在冷清的很",
+          text: "我跟奈克相談甚歡，後來去了酒吧，也許是因為命案的緣故，店裡實在冷清的很。",
         },
         {
           side: "left",
@@ -1122,7 +1122,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         {
           side: "right",
-          text: "不過是家用的＿＿＿＿",
+          text: "不過是家用的＿＿＿＿。"
         },
       ],
 
@@ -1565,9 +1565,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const rhythmTrackArea = document.getElementById("rhythmTrackArea");
   const rhythmWaveLabel = document.getElementById("rhythmWaveLabel");
   const rhythmWavePips = document.getElementById("rhythmWavePips");
-  const rhythmRedZone = document.getElementById("rhythmRedZone");
-  const rhythmBeatFlash = document.getElementById("rhythmBeatFlash");
-  const rhythmArrow = document.getElementById("rhythmArrow");
+  const rhythmEcg = document.getElementById("rhythmEcg");
+  const rhythmEcgWindow = document.getElementById("rhythmEcgWindow");
+  const rhythmEcgTrace = document.getElementById("rhythmEcgTrace");
+  const rhythmEcgCursor = document.getElementById("rhythmEcgCursor");
+  const rhythmEcgDot = document.getElementById("rhythmEcgDot");
   const rhythmJudgment = document.getElementById("rhythmJudgment");
 
   const rhythmCharacterImg = document.getElementById("rhythmCharacterImg");
@@ -2031,12 +2033,111 @@ document.addEventListener("DOMContentLoaded", () => {
     let rafId = null;
     let stepTimers = [];
     let waveIndex = 0;
-    let arrowPercent = 0;
+    let scanPercent = 0;
     let activeZoneStart = 48;
     let activeZoneWidth = 13;
     let isSweepActive = false;
     let sweepStartTime = 0;
-    let beatStepTriggered = [];
+    let trace = [];
+    let pendingPeaks = [];
+    let wavePeaks = [];
+    let waveStrengths = [];
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const beatShape = [[-27, 0], [-18, 5], [-12, 0], [-6, -11], [0, 53],
+      [9, -21], [17, 0], [31, 10], [46, 0]];
+
+    function drawTrace(peaks, amplitude, now = 0) {
+      function baselineAt(x) {
+        if (!now) return 76;
+        return 76 + Math.sin(x / 115 - now / 230) * 2.8 +
+          Math.sin(x / 48 - now / 430) * 1.2;
+      }
+
+      trace = [[0, baselineAt(0)]];
+      peaks.forEach((peak, index) => {
+        const base = Array.isArray(amplitude) ? amplitude[index] : amplitude;
+        const strength = now ? base * (1 + Math.sin(now / 180 - index * .92) * .21) : base;
+        beatShape.forEach(([offset, height]) => {
+          const x = peak * 10 + offset;
+          if (x > 0 && x < 1000) trace.push([x, baselineAt(x) - height * strength]);
+        });
+      });
+      trace.push([1000, baselineAt(1000)]);
+      rhythmEcgTrace?.setAttribute("points", trace.map(point =>
+        point.map(value => value.toFixed(2)).join(",")).join(" "));
+    }
+
+    function drawAmbientTrace(now) {
+      const stable = rhythmEcg?.classList.contains("is-stable");
+      if (phase === "rhythm" && wavePeaks.length) {
+        drawTrace(wavePeaks, waveStrengths, now);
+        positionScan(scanPercent);
+        return;
+      }
+
+      const scrolling = motionPreference.matches ? 0 : (now / (stable ? 48 : 38)) % 100;
+      const beats = stable ? [8, 33, 58, 83] : [9, 29, 58, 74, 91];
+      const peaks = [];
+      const strengths = [];
+      for (let repeat = -1; repeat <= 1; repeat++) {
+        beats.forEach((beat, index) => {
+          const position = repeat * 100 + beat - scrolling;
+          if (position < -5 || position > 104) return;
+          peaks.push(position);
+          strengths.push(stable ? .64 : [.56, 1, .73, .9, .49][index]);
+        });
+      }
+      drawTrace(peaks, strengths);
+    }
+
+    let ambientFrame = null;
+
+    function animateAmbient(now) {
+      if (rhythmScene?.classList.contains("is-active") && !motionPreference.matches) {
+        if (!isSweepActive) drawAmbientTrace(now);
+        ambientFrame = requestAnimationFrame(animateAmbient);
+      } else {
+        ambientFrame = null;
+      }
+    }
+
+    function syncAmbient() {
+      const active = rhythmScene?.classList.contains("is-active");
+      if (active && !motionPreference.matches) {
+        if (ambientFrame === null) ambientFrame = requestAnimationFrame(animateAmbient);
+        return;
+      }
+      if (ambientFrame !== null) {
+        cancelAnimationFrame(ambientFrame);
+        ambientFrame = null;
+      }
+      if (active && !isSweepActive) drawAmbientTrace(0);
+    }
+
+    if (rhythmScene) {
+      const sceneObserver = new MutationObserver(syncAmbient);
+      sceneObserver.observe(rhythmScene, { attributes: true, attributeFilter: ["class"] });
+      motionPreference.addEventListener("change", syncAmbient);
+      syncAmbient();
+    }
+
+    function isInWindow(percent) {
+      return percent >= activeZoneStart - HIT_TOLERANCE &&
+        percent <= activeZoneStart + activeZoneWidth + HIT_TOLERANCE;
+    }
+
+    function positionScan(percent) {
+      if (!rhythmEcgCursor || !rhythmEcgDot) return;
+      const x = Math.min(995, Math.max(5, percent * 10));
+      const right = trace.findIndex(point => point[0] >= x);
+      const [x0, y0] = trace[right - 1];
+      const [x1, y1] = trace[right];
+      const y = y0 + ((x - x0) / (x1 - x0)) * (y1 - y0);
+      rhythmEcgCursor.setAttribute("transform", `translate(${x} 0)`);
+      rhythmEcgDot.setAttribute("y1", y);
+      rhythmEcgDot.setAttribute("y2", y);
+      rhythmEcg?.classList.toggle("is-in-window", isInWindow(percent));
+    }
 
     function clearStepTimers() {
       stepTimers.forEach((id) => clearTimeout(id));
@@ -2051,11 +2152,6 @@ document.addEventListener("DOMContentLoaded", () => {
           setTimeout(() => rhythmHeartBtn.classList.remove("is-beating"), 130),
         );
       }
-      if (rhythmBeatFlash) {
-        rhythmBeatFlash.classList.remove("is-pulsing");
-        void rhythmBeatFlash.offsetWidth;
-        rhythmBeatFlash.classList.add("is-pulsing");
-      }
     }
 
     function updateWaveUI() {
@@ -2067,10 +2163,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (rhythmDialogueText) {
         typewriter.start(rhythmDialogueText, current.dialogue, 32, null, false);
       }
-      if (rhythmRedZone) {
-        rhythmRedZone.style.left = `${activeZoneStart}%`;
-        rhythmRedZone.style.width = `${activeZoneWidth}%`;
-      }
+
       if (rhythmWavePips) {
         const pips = rhythmWavePips.querySelectorAll(".wave-pip");
         pips.forEach((pip, idx) => {
@@ -2085,12 +2178,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (phase !== "rhythm") return;
       const current = waves[waveIndex];
       updateWaveUI();
-      arrowPercent = 0;
-      beatStepTriggered = current.cueTimes.map(() => false);
-      if (rhythmArrow) {
-        rhythmArrow.style.left = "0%";
-        rhythmArrow.classList.remove("is-in-zone");
+      scanPercent = 0;
+      const target = activeZoneStart + activeZoneWidth / 2;
+      const sidePeaks = [[14, 30, 84], [12, 48, 87], [17, 32, 79], [19, 41, 89]];
+      wavePeaks = [...sidePeaks[waveIndex].slice(0, 2), target, sidePeaks[waveIndex][2]];
+      pendingPeaks = [...wavePeaks];
+      const irregularity = 1 - waveIndex * 0.2;
+      waveStrengths = [1 - 0.22 * irregularity, 1 + 0.13 * irregularity,
+        1, 1 - 0.34 * irregularity];
+      drawTrace(wavePeaks, waveStrengths);
+      if (rhythmEcgWindow) {
+        rhythmEcgWindow.style.left = `${activeZoneStart - HIT_TOLERANCE}%`;
+        rhythmEcgWindow.style.width = `${activeZoneWidth + HIT_TOLERANCE * 2}%`;
       }
+      positionScan(0);
 
       isSweepActive = true;
       sweepStartTime = performance.now();
@@ -2101,21 +2202,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const elapsed = now - sweepStartTime;
         const t = Math.min(1, elapsed / current.duration);
 
-        current.cueTimes.forEach((cueT, idx) => {
-          if (!beatStepTriggered[idx] && t >= cueT) {
-            beatStepTriggered[idx] = true;
-            triggerHeartbeatPulse();
-          }
-        });
-
-        arrowPercent = current.curve(t);
-        if (rhythmArrow) {
-          rhythmArrow.style.left = `${arrowPercent}%`;
-          const inZone =
-            arrowPercent >= activeZoneStart - HIT_TOLERANCE &&
-            arrowPercent <= activeZoneStart + activeZoneWidth + HIT_TOLERANCE;
-          rhythmArrow.classList.toggle("is-in-zone", inZone);
+        scanPercent = current.curve(t);
+        if (pendingPeaks.length && scanPercent >= pendingPeaks[0]) {
+          do {
+            pendingPeaks.shift();
+          } while (pendingPeaks.length && scanPercent >= pendingPeaks[0]);
+          triggerHeartbeatPulse();
         }
+        if (!motionPreference.matches) drawTrace(wavePeaks, waveStrengths, now);
+        positionScan(scanPercent);
 
         if (t >= 1) {
           isSweepActive = false;
@@ -2138,6 +2233,9 @@ document.addEventListener("DOMContentLoaded", () => {
         rafId = null;
       }
       if (rhythmHeartBtn) rhythmHeartBtn.disabled = true;
+      rhythmEcg?.classList.remove("is-hit", "is-in-window");
+      rhythmEcg?.classList.add(isPassed ? "is-stable" : "is-missed");
+      drawAmbientTrace(performance.now());
 
       if (isPassed) {
         playTone(659.25, 0.35, "triangle", 0.2, 1.15);
@@ -2225,9 +2323,7 @@ document.addEventListener("DOMContentLoaded", () => {
         rafId = null;
       }
 
-      const isHit =
-        arrowPercent >= activeZoneStart - HIT_TOLERANCE &&
-        arrowPercent <= activeZoneStart + activeZoneWidth + HIT_TOLERANCE;
+      const isHit = isInWindow(scanPercent);
 
       if (isHit) {
         playTone(587.33, 0.28, "triangle", 0.18, 1.1);
@@ -2242,15 +2338,8 @@ document.addEventListener("DOMContentLoaded", () => {
             ),
           );
         }
-        if (rhythmRedZone) {
-          rhythmRedZone.classList.add("is-zone-hit");
-          stepTimers.push(
-            setTimeout(
-              () => rhythmRedZone.classList.remove("is-zone-hit"),
-              360,
-            ),
-          );
-        }
+        rhythmEcg?.classList.add("is-hit");
+        stepTimers.push(setTimeout(() => rhythmEcg?.classList.remove("is-hit"), 360));
 
         waveIndex += 1;
         updateWaveUI();
@@ -2282,13 +2371,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (rhythmActionBtn) rhythmActionBtn.hidden = true;
         if (rhythmInstructionText) {
           rhythmInstructionText.textContent =
-            "請在箭頭指到紅色區域時點擊紅心或按空白鍵。";
+            "心電圖亮點進入淡綠色區域時，點擊紅心或按空白鍵。";
         }
 
         stepTimers.push(setTimeout(() => startWaveSweep(), 380));
       },
       stop() {
         isSweepActive = false;
+        rhythmEcg?.classList.remove("is-stable", "is-missed", "is-hit", "is-in-window");
+        wavePeaks = [];
+        waveStrengths = [];
+        drawAmbientTrace(0);
+        positionScan(0);
+        if (rhythmEcgWindow) rhythmEcgWindow.style.width = "0";
         clearStepTimers();
         if (rafId !== null) {
           cancelAnimationFrame(rafId);
@@ -2400,34 +2495,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const excuseCandlesWrap = document.getElementById("excuseCandlesWrap");
   const excuseCandlesImg = document.getElementById("excuseCandlesImg");
   const excuseFeedbackBanner = document.getElementById("excuseFeedbackBanner");
-  const rhythmInstructionBox = document.getElementById("rhythmInstructionBox");
+
   const excuseTypingBox = document.getElementById("excuseTypingBox");
-
-  function alignExcuseCandlesWithTypingBox() {
-    if (!excuseCandlesWrap || !excuseTypingBox || !rhythmInstructionBox) return;
-
-    const boxRect = excuseTypingBox.getBoundingClientRect();
-    const sceneRect = excuseScene.getBoundingClientRect();
-    const leftDripRight = 182 / 1920;
-    const holderBottom = 766 / 1080;
-    const imageWidth = rhythmInstructionBox.getBoundingClientRect().width * 0.75;
-    if (imageWidth <= 0) return;
-
-    const imageHeight = (imageWidth * 9) / 16;
-    excuseCandlesWrap.style.width = `${imageWidth}px`;
-    excuseCandlesWrap.style.left =
-      `${boxRect.left - sceneRect.left - imageWidth * leftDripRight}px`;
-    excuseCandlesWrap.style.top =
-      `${boxRect.top - sceneRect.top - (imageWidth - imageHeight) / 2 - imageHeight * holderBottom}px`;
-    excuseCandlesWrap.style.bottom = "auto";
-  }
-
-  alignExcuseCandlesWithTypingBox();
-  window.addEventListener("resize", alignExcuseCandlesWithTypingBox);
-  if (excuseTypingBox && typeof ResizeObserver !== "undefined") {
-    new ResizeObserver(alignExcuseCandlesWithTypingBox).observe(excuseTypingBox);
-  }
-
   const typingTimerFill = document.getElementById("typingTimerFill");
   const typingStatusBadge = document.getElementById("typingStatusBadge");
   const excuseActionBtn = document.getElementById("excuseActionBtn");
@@ -2456,8 +2525,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
   // Web Audio 合成音效
   // =========================================
+  let audioCtx = null;
   function ensureAudio() {
-    gameAudio.resume();
+    if (!audioCtx) {
+      const AudioContextClass =
+        window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+      }
+    }
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
   }
 
   function playTone(
@@ -2467,8 +2546,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gainVal = 0.14,
     endFreqRatio = 0.6,
   ) {
-    const audioCtx = gameAudio.context;
-    if (!audioCtx || audioCtx.state !== "running") return;
+    if (!audioCtx) return;
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -2483,7 +2561,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
     osc.connect(gain);
-    gain.connect(gameAudio.output);
+    gain.connect(audioCtx.destination);
     osc.start(now);
     osc.stop(now + duration);
   }
@@ -2625,13 +2703,13 @@ document.addEventListener("DOMContentLoaded", () => {
         { side: "left", text: "那麼地窖裡的氣味該怎麼解釋？" },
         { side: "left", text: "有人看見你深夜獨自進出。" },
         { side: "left", text: "那具屍體究竟是怎麼回事？" },
-        { side: "center", text: "神父，您誤會了。" },
+        { side: "center", text: "神父，您誤會了！" },
         { side: "center", text: "我只是去整理陳年的酒桶。" },
         { side: "center", text: "根本沒有您說的任何屍體。" },
         { side: "left", text: "在主面前，謊言無所遁形。", separated: true },
         {
           side: "center",
-          text: "請相信我，那只是腐壞的木屑味。",
+          text: "請相信我，那只是腐壞的木屑味！",
           separated: true,
         },
       ],
@@ -2641,7 +2719,7 @@ document.addEventListener("DOMContentLoaded", () => {
       dialogues: [
         {
           side: "left",
-          text: "你的說辭處處充滿矛盾。",
+          text: "你的說辭處處充滿矛盾的謎團。",
           replaceSeparated: true,
         },
         {
@@ -2868,9 +2946,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (idx === 0) slot.classList.add("is-current");
       slot.dataset.index = String(idx);
 
-      const charEl = document.createElement("span");
-      charEl.className = "letter-char";
-      charEl.textContent = ch;
+      const svgNamespace = "http://www.w3.org/2000/svg";
+      const charEl = document.createElementNS(svgNamespace, "svg");
+      charEl.setAttribute("class", "letter-char");
+      charEl.setAttribute("viewBox", "0 0 56 72");
+      charEl.setAttribute("role", "img");
+      charEl.setAttribute("aria-label", ch);
+      const glyph = document.createElementNS(svgNamespace, "text");
+      glyph.setAttribute("class", "letter-glyph");
+      glyph.setAttribute("x", "28");
+      glyph.setAttribute("y", "56");
+      glyph.setAttribute("text-anchor", "middle");
+      glyph.setAttribute("aria-hidden", "true");
+      glyph.textContent = ch;
+      charEl.appendChild(glyph);
 
       const lineEl = document.createElement("span");
       lineEl.className = "letter-underline";
@@ -2935,9 +3024,9 @@ document.addEventListener("DOMContentLoaded", () => {
           // 進入下一題狡辯對話。
           phase = "transition";
           playTone(659.25, 0.25, "triangle", 0.18, 1.12);
-          showFeedbackBanner("完美通過，準備下一句狡辯", true);
+          showFeedbackBanner("完美通過，準備下一句狡辯！", true);
           if (typingStatusBadge) {
-            typingStatusBadge.textContent = "成功完成本句狡辯";
+            typingStatusBadge.textContent = "成功完成本句狡辯！";
           }
 
           transitionTimers.push(
@@ -2981,15 +3070,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (isPassed) {
       playTone(659.25, 0.36, "triangle", 0.2, 1.15);
-      showFeedbackBanner("完美通過", true);
+      showFeedbackBanner("完美通過，不扣分", true);
 
       appendSpeechBubble({
         side: "left",
-        text: "……願你的言辭在主面前毫無虛假。",
+        text: "……願你的言辭在主面前毫無虛假。進入下一階段吧。",
       });
 
       if (typingStatusBadge) {
-        typingStatusBadge.textContent = "狡辯成功";
+        typingStatusBadge.textContent = "狡辯成功：不扣分。";
       }
       if (excuseActionBtn) {
         excuseActionBtn.textContent = "繼續告解";
@@ -2999,7 +3088,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       playTone(96, 0.45, "sawtooth", 0.2, 0.5);
       extinguishCandlesFromRight(FAIL_EXTINGUISH_COUNT);
-      showFeedbackBanner("失敗", false);
+      showFeedbackBanner("狡辯失敗，扣一分", false);
 
       if (excuseScene) {
         excuseScene.classList.add("is-miss-flash");
@@ -3010,11 +3099,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       appendSpeechBubble({
         side: "left",
-        text: "支吾其詞、破綻百出……你根本無法解釋自己的言行",
+        text: "支吾其詞、破綻百出……你根本無法為自己辯解！",
       });
 
       if (typingStatusBadge) {
-        typingStatusBadge.textContent = "狡辯失敗";
+        typingStatusBadge.textContent = "狡辯失敗：扣一分。";
       }
       if (excuseActionBtn) {
         excuseActionBtn.textContent = "繼續告解";
@@ -3091,7 +3180,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.addEventListener("startExcuseBranch", () => {
-    alignExcuseCandlesWithTypingBox();
     const selectedGender = excuseScene.getAttribute("data-gender") || "male";
     const isFemaleCharacter = selectedGender === "female";
     rounds = chooseRandomRounds();
@@ -3109,9 +3197,6 @@ document.addEventListener("DOMContentLoaded", () => {
     extinguishCandlesFromRight(PASS_EXTINGUISH_COUNT);
   });
 });
-
-
-// 三種結局互動。
 (() => {
   'use strict';
   const endingScene = document.getElementById('endingScene');
@@ -3354,4 +3439,194 @@ document.addEventListener("DOMContentLoaded", () => {
     endingScene.classList.add('is-active');
     controllers.get(active).start();
   });
+})();
+/* =========================================
+   【新增】蠟燭游標與光線軌跡系統
+   功能：
+   1. 自訂游標跟隨滑鼠
+   2. 點擊時增強燭火亮度
+   3. 保留半秒內的移動光線
+   4. 光線隨時間逐漸消失
+   ========================================= */
+
+(() => {
+    const cursor = document.getElementById("candleCursor");
+    const canvas = document.getElementById("candleTrail");
+
+    // 若 HTML 沒有對應元素，停止初始化
+    if (!cursor || !canvas) return;
+
+    const flameGlow = cursor.querySelector(".candle-cursor-glow");
+    if (!flameGlow) {
+        console.error("找不到蠟燭游標的燭火光暈");
+        return;
+    }
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    /* 【設定】可自行調整的參數 */
+    const TRAIL_DURATION = 500;
+    const TRAIL_WIDTH = 18;
+    const CLICK_DURATION = 280;  // 點擊增亮持續時間
+
+    const CURSOR_OFFSET_X = 22;
+    const CURSOR_OFFSET_Y = 38;
+    const TRAIL_OFFSET_Y = 4;
+    let clickTimer = null;
+
+    // 儲存軌跡點：x、y、產生時間
+    const trailPoints = [];
+    const sparkles = [];
+
+    /* 【功能一】調整 Canvas 解析度 */
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    /* 【功能二】讓蠟燭跟隨滑鼠 */
+    document.addEventListener("pointermove", (event) => {
+        if (event.pointerType === "touch") return;
+
+        cursor.style.opacity = "1";
+
+        // 將游標定位至滑鼠位置
+        cursor.style.transform =
+            `translate3d(${event.clientX - CURSOR_OFFSET_X}px, ${event.clientY - CURSOR_OFFSET_Y}px, 0)`;
+
+        const now = performance.now();
+        if (trailPoints.length && now - trailPoints[trailPoints.length - 1].time > TRAIL_DURATION) {
+            trailPoints.length = 0;
+            sparkles.length = 0;
+        }
+
+        const point = {
+            x: event.clientX - CURSOR_OFFSET_X + flameGlow.offsetLeft,
+            y: event.clientY - CURSOR_OFFSET_Y + flameGlow.offsetTop + TRAIL_OFFSET_Y,
+            time: now
+        };
+        trailPoints.push(point);
+
+        const lastSparkle = sparkles[sparkles.length - 1];
+        if (!lastSparkle || Math.hypot(point.x - lastSparkle.originX, point.y - lastSparkle.originY) >= 18) {
+            sparkles.push({
+                originX: point.x,
+                originY: point.y,
+                x: point.x + (Math.random() - 0.5) * 35,
+                y: point.y + (Math.random() - 0.5) * 35,
+                radius: 1 + Math.random() * 1.5,
+                time: now
+            });
+        }
+    });
+
+    /* 【功能三】點擊時增強燭火亮度 */
+    document.addEventListener("pointerdown", (event) => {
+        if (event.pointerType === "touch") return;
+
+        cursor.classList.add("is-clicking");
+
+        clearTimeout(clickTimer);
+
+        clickTimer = setTimeout(() => {
+            cursor.classList.remove("is-clicking");
+        }, CLICK_DURATION);
+    });
+
+    /* 【功能四】繪製半秒內的光線軌跡 */
+    function drawTrail(now) {
+        ctx.clearRect(
+            0,
+            0,
+            window.innerWidth,
+            window.innerHeight
+        );
+
+        // 移除超過半秒的舊軌跡
+        while (
+            trailPoints.length &&
+            now - trailPoints[0].time > TRAIL_DURATION
+        ) {
+            trailPoints.shift();
+        }
+        while (sparkles.length && now - sparkles[0].time > TRAIL_DURATION) {
+            sparkles.shift();
+        }
+
+        // 逐段繪製光線
+        for (let i = 1; i < trailPoints.length; i++) {
+            const previous = trailPoints[i - 1];
+            const current = trailPoints[i];
+
+            // 依據軌跡年齡計算透明度
+            const age = now - current.time;
+            const alpha = Math.min(1, Math.max(0, 1 - age / TRAIL_DURATION));
+
+            ctx.beginPath();
+            const beforePrevious = trailPoints[i - 2];
+            const startX = beforePrevious ? (beforePrevious.x + previous.x) / 2 : previous.x;
+            const startY = beforePrevious ? (beforePrevious.y + previous.y) / 2 : previous.y;
+            const endX = i === trailPoints.length - 1 ? current.x : (previous.x + current.x) / 2;
+            const endY = i === trailPoints.length - 1 ? current.y : (previous.y + current.y) / 2;
+            if (startX === endX && startY === endY) continue;
+            ctx.moveTo(startX, startY);
+            ctx.quadraticCurveTo(previous.x, previous.y, endX, endY);
+
+            const startAlpha = alpha * (i - 1) / (trailPoints.length - 1);
+            const endAlpha = alpha * i / (trailPoints.length - 1);
+            const glowGradient = ctx.createLinearGradient(startX, startY, endX, endY);
+            glowGradient.addColorStop(0, `rgba(255, 190, 90, ${startAlpha})`);
+            glowGradient.addColorStop(1, `rgba(255, 190, 90, ${endAlpha})`);
+            ctx.strokeStyle = glowGradient;
+
+            ctx.lineWidth = TRAIL_WIDTH;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            // 金黃色柔光
+            ctx.shadowColor = "rgba(255, 170, 50, 0.9)";
+            ctx.shadowBlur = 12 * alpha;
+
+            ctx.stroke();
+            const coreGradient = ctx.createLinearGradient(startX, startY, endX, endY);
+            coreGradient.addColorStop(0, `rgba(255, 241, 190, ${startAlpha * 0.8})`);
+            coreGradient.addColorStop(1, `rgba(255, 241, 190, ${endAlpha * 0.8})`);
+            ctx.strokeStyle = coreGradient;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        sparkles.forEach((sparkle) => {
+            const alpha = Math.min(1, Math.max(0, 1 - (now - sparkle.time) / TRAIL_DURATION));
+            ctx.beginPath();
+            ctx.arc(sparkle.x, sparkle.y, sparkle.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 226, 159, ${alpha})`;
+            ctx.shadowColor = "rgba(255, 174, 64, 0.9)";
+            ctx.shadowBlur = 8;
+            ctx.fill();
+        });
+
+        ctx.shadowBlur = 0;
+
+        requestAnimationFrame(drawTrail);
+    }
+
+    /* 【功能五】滑鼠離開視窗時隱藏蠟燭 */
+    document.addEventListener("pointerout", (event) => {
+        if (!event.relatedTarget) {
+            cursor.style.opacity = "0";
+            trailPoints.length = 0;
+            sparkles.length = 0;
+        }
+    });
+
+    /* 啟動光線繪製 */
+    requestAnimationFrame(drawTrail);
 })();
