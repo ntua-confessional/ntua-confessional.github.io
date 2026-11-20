@@ -83,6 +83,63 @@ const gameAudio = (() => {
   };
 })();
 
+function createSoundEffects() {
+  gameAudio.resume();
+  const audioCtx = gameAudio.context;
+  if (!audioCtx) return null;
+
+  const now = audioCtx.currentTime;
+
+  function connectEnvelope(source, duration, gainValue, delay, attack) {
+    const start = now + delay;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.linearRampToValueAtTime(gainValue, start + attack);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    source.connect(gain);
+    gain.connect(gameAudio.output);
+    return start;
+  }
+
+  function noise(duration, { gain, frequency, filterType = "lowpass", delay = 0, attack = 0.005 }) {
+    const buffer = audioCtx.createBuffer(
+      1,
+      Math.ceil(audioCtx.sampleRate * duration),
+      audioCtx.sampleRate,
+    );
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) {
+      samples[i] = Math.random() * 2 - 1;
+    }
+
+    const source = audioCtx.createBufferSource();
+    const filter = audioCtx.createBiquadFilter();
+    source.buffer = buffer;
+    filter.type = filterType;
+    filter.frequency.value = frequency;
+    source.connect(filter);
+    const start = connectEnvelope(filter, duration, gain, delay, attack);
+    source.start(start);
+    source.stop(start + duration);
+    return delay + duration;
+  }
+
+  function tone(frequency, duration, { type, gain, endFreq, delay = 0, attack = 0.005 }) {
+    const source = audioCtx.createOscillator();
+    source.type = type;
+    const start = connectEnvelope(source, duration, gain, delay, attack);
+    source.frequency.setValueAtTime(frequency, start);
+    if (endFreq !== undefined) {
+      source.frequency.exponentialRampToValueAtTime(endFreq, start + duration);
+    }
+    source.start(start);
+    source.stop(start + duration);
+    return delay + duration;
+  }
+
+  return { noise, tone };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // 開場至警告頁：快取節點、管理場景狀態與共用動畫計時器。
   const introScene = document.getElementById("introScene");
@@ -1043,6 +1100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 儲存對話動畫的計時器
   let questionTimers = [];
+  const QUESTION_CANDLE_EXTINGUISH_MS = 350;
 
   // 記錄玩家在五題中選擇的答案
   // 0 = 第一個選項
@@ -1271,12 +1329,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function typeQuestionFillIn(textElement, text, bubble, onComplete) {
+    const characters = Array.from(text);
+    let index = 0;
+    bubble.classList.add("is-typing");
+    bubble.setAttribute("aria-live", "off");
+
+    const finish = () => {
+      bubble.classList.remove("is-typing");
+      bubble.setAttribute("aria-live", "polite");
+      onComplete();
+    };
+
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      textElement.textContent = text;
+      finish();
+      return;
+    }
+
+    const typeNextCharacter = () => {
+      textElement.textContent += characters[index];
+      index += 1;
+      questionDialogues.scrollTop = questionDialogues.scrollHeight;
+
+      if (index === characters.length) {
+        finish();
+        return;
+      }
+
+      questionTimers.push(setTimeout(typeNextCharacter, 38));
+    };
+
+    typeNextCharacter();
+  }
+
   function showNextQuestionDialogue() {
     const data = questionData[questionIndex];
     const dialogue = data.dialogues[questionDialogueIndex];
     if (!dialogue) return;
 
     questionDialogueIndex++;
+    const isLastDialogue = questionDialogueIndex === data.dialogues.length;
 
     const isRightSpeaking = dialogue.side === "right";
     if (questionNpcLeft) {
@@ -1293,15 +1386,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const bubble = document.createElement("div");
     bubble.className =
       "question-bubble " + (dialogue.side === "right" ? "right" : "left");
-    bubble.textContent = dialogue.text;
-    if (/[＿_]{2,}/.test(dialogue.text)) {
+    const isFillIn = /[＿_]{2,}/.test(dialogue.text);
+    let fillInText = null;
+    if (isFillIn) {
       bubble.classList.add("is-fill-in");
+      fillInText = document.createElement("span");
+      fillInText.className = "question-bubble-text";
+      bubble.appendChild(fillInText);
+    } else {
+      bubble.textContent = dialogue.text;
     }
 
     questionDialogues.appendChild(bubble);
     questionDialogues.scrollTop = questionDialogues.scrollHeight;
 
-    if (questionDialogueIndex === data.dialogues.length) {
+    if (isFillIn) {
+      typeQuestionFillIn(fillInText, dialogue.text, bubble, () => {
+        if (isLastDialogue) showQuestionChoices();
+      });
+    } else if (isLastDialogue) {
       showQuestionChoices();
     }
   }
@@ -1459,6 +1562,21 @@ document.addEventListener("DOMContentLoaded", () => {
     continueQuestionnaire();
   });
 
+  function playQuestionConfirmSound() {
+    const sound = createSoundEffects();
+    if (!sound) return 0;
+
+    const soundDurations = [
+      sound.noise(0.035, { gain: 0.075, frequency: 1800 }),
+      sound.tone(880, 0.065, { type: "triangle", gain: 0.075 }),
+      sound.noise(0.035, { gain: 0.05, frequency: 1800, delay: 0.055 }),
+      sound.tone(1720, 0.27, { type: "sine", gain: 0.09, delay: 0.055 }),
+      sound.tone(2540, 0.19, { type: "sine", gain: 0.028, delay: 0.058 }),
+      sound.tone(3400, 0.12, { type: "sine", gain: 0.009, delay: 0.06 }),
+    ];
+    return Math.max(...soundDurations) * 1000;
+  }
+
   function chooseQuestion(index) {
     // 防止重複點擊
     if (questionLocked || questionButtons[index].disabled) {
@@ -1467,17 +1585,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 鎖定目前題目
     questionLocked = true;
+    const soundDuration = playQuestionConfirmSound();
 
     let startRhythmAfterAnswer = false;
     let startExcuseAfterAnswer = false;
     if (index === questionData[questionIndex].penaltyChoiceIndex) {
-      extinguishNextCandle();
-      if (!hasTriggeredRhythmEvent && extinguishedCandleCount === 2) {
+      const nextExtinguishedCandleCount = extinguishedCandleCount + 1;
+      if (!hasTriggeredRhythmEvent && nextExtinguishedCandleCount === 2) {
         hasTriggeredRhythmEvent = true;
         startRhythmAfterAnswer = true;
       } else if (
         !hasTriggeredExcuseEvent &&
-        extinguishedCandleCount === 5
+        nextExtinguishedCandleCount === 5
       ) {
         startExcuseAfterAnswer = true;
       }
@@ -1494,31 +1613,39 @@ document.addEventListener("DOMContentLoaded", () => {
     // 被選擇的按鈕變色
     questionButtons[index].classList.add("is-selected");
 
-    // ===== 延遲後進入下一題 =====
+    const advanceAfterFeedback = () => {
+      questionButtons[index].classList.remove("is-selected");
+      questionIndex++;
 
-    questionTimers.push(
-      setTimeout(() => {
-        // 還原按鈕顏色
-        questionButtons[index].classList.remove("is-selected");
+      if (startRhythmAfterAnswer) {
+        syncSceneGender(rhythmScene);
+        rhythmIntroScene.classList.add("is-active");
+        window.dispatchEvent(new Event("startRhythmIntroDialogue"));
+        return;
+      }
 
-        // 題目進度加一
-        questionIndex++;
+      if (startExcuseAfterAnswer) {
+        startExcuseBranchIfReady();
+        return;
+      }
 
-        if (startRhythmAfterAnswer) {
-          syncSceneGender(rhythmScene);
-          rhythmIntroScene.classList.add("is-active");
-          window.dispatchEvent(new Event("startRhythmIntroDialogue"));
-          return;
-        }
+      continueQuestionnaire();
+    };
 
-        if (startExcuseAfterAnswer) {
-          startExcuseBranchIfReady();
-          return;
-        }
-
-        continueQuestionnaire();
-      }, 450),
-    );
+    const isPenaltyChoice =
+      index === questionData[questionIndex].penaltyChoiceIndex;
+    if (isPenaltyChoice) {
+      questionTimers.push(
+        setTimeout(() => {
+          extinguishNextCandle();
+          questionTimers.push(
+            setTimeout(advanceAfterFeedback, QUESTION_CANDLE_EXTINGUISH_MS),
+          );
+        }, soundDuration),
+      );
+    } else {
+      questionTimers.push(setTimeout(advanceAfterFeedback, 450));
+    }
   }
 
   // 題目、對話推進與重玩的事件綁定。
@@ -1778,7 +1905,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const TOTAL_CANDLES = 7;
   const PASS_EXTINGUISH_COUNT = 2;
   const FAIL_EXTINGUISH_COUNT = 3;
-  const HIT_TOLERANCE = 1.6;
+  const HIT_TOLERANCE = 1.2;
 
   let phase = "inactive";
 
@@ -1801,7 +1928,7 @@ document.addEventListener("DOMContentLoaded", () => {
       label: "第 1 階段心律",
       dialogue: "「和您的對話令我感到懷疑。」",
       zoneStart: 48,
-      zoneWidth: 13,
+      zoneWidth: 11,
       duration: 1750,
       cueTimes: [0.18, 0.36],
       curve(t) {
@@ -1812,7 +1939,7 @@ document.addEventListener("DOMContentLoaded", () => {
       label: "第 2 階段心律",
       dialogue: "「……你的眼神為什麼在閃躲？」",
       zoneStart: 60,
-      zoneWidth: 12,
+      zoneWidth: 10,
       duration: 1950,
       cueTimes: [0.16, 0.48],
       curve(t) {
@@ -1826,7 +1953,7 @@ document.addEventListener("DOMContentLoaded", () => {
       label: "第 3 階段心律",
       dialogue: "「別想編造謊言，你的脈搏正在發抖！」",
       zoneStart: 42,
-      zoneWidth: 11,
+      zoneWidth: 9,
       duration: 2050,
       cueTimes: [0.2, 0.42, 0.55],
       curve(t) {
@@ -1840,7 +1967,7 @@ document.addEventListener("DOMContentLoaded", () => {
       label: "第 4 階段心律",
       dialogue: "「案發當晚，你真的待在教堂裡嗎？」",
       zoneStart: 66,
-      zoneWidth: 10,
+      zoneWidth: 8,
       duration: 1480,
       cueTimes: [0.14, 0.28, 0.42],
       curve(t) {
@@ -1908,21 +2035,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function playIntroDialogueLine(index) {
     phase = "intro-dialogue";
     if (dialogueNextHint) dialogueNextHint.classList.remove("is-visible");
-    if (rhythmInstructionBox)
-      rhythmInstructionBox.classList.add("is-clickable");
     if (rhythmTrackArea) rhythmTrackArea.classList.add("is-standby");
 
     if (index === 0 && rhythmInstructionText) {
       rhythmInstructionText.textContent =
-        "請先聆聽神父的對話（點擊下方方框或按空白鍵繼續）。";
+        "請先聆聽神父的對話（按空白鍵繼續）。";
     }
 
     typewriter.start(rhythmDialogueText, introScript[index], 46, () => {
       if (dialogueNextHint) {
         dialogueNextHint.textContent =
           index < introScript.length - 1
-            ? "點擊下方方框繼續 ▾"
-            : "點擊下方方框開始檢定 ▸";
+            ? "按空白鍵繼續 ▾"
+            : "按空白鍵開始檢定 ▸";
         dialogueNextHint.classList.add("is-visible");
       }
     });
@@ -1941,8 +2066,6 @@ document.addEventListener("DOMContentLoaded", () => {
       playIntroDialogueLine(introLineIndex);
     } else {
       if (dialogueNextHint) dialogueNextHint.classList.remove("is-visible");
-      if (rhythmInstructionBox)
-        rhythmInstructionBox.classList.remove("is-clickable");
       rhythmController.start();
     }
   }
@@ -2275,8 +2398,9 @@ document.addEventListener("DOMContentLoaded", () => {
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "繼續告解";
+                rhythmActionBtn.textContent = "按空白鍵繼續告解";
                 rhythmActionBtn.dataset.outcome = "success";
+                rhythmActionBtn.disabled = true;
                 rhythmActionBtn.hidden = false;
               }
             },
@@ -2320,6 +2444,7 @@ document.addEventListener("DOMContentLoaded", () => {
               if (rhythmActionBtn) {
                 rhythmActionBtn.textContent = "回到告解";
                 rhythmActionBtn.dataset.outcome = "failure";
+                rhythmActionBtn.disabled = false;
                 rhythmActionBtn.hidden = false;
               }
             },
@@ -2409,54 +2534,61 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
   // 事件綁定
   // =========================================
-  if (rhythmInstructionBox) {
-    rhythmInstructionBox.addEventListener("click", (e) => {
-      if (phase !== "intro-dialogue") return;
-      e.stopPropagation();
-      advanceIntroDialogue();
-    });
-  }
-
   window.addEventListener("keydown", (e) => {
     if (!rhythmScene || !rhythmScene.classList.contains("is-active")) return;
-    if (e.code === "Space" || e.code === "Enter") {
-      if (phase === "intro-dialogue") {
-        e.preventDefault();
-        advanceIntroDialogue();
-      } else if (phase === "rhythm" && e.code === "Space") {
-        e.preventDefault();
-        rhythmController.triggerHit();
-      }
+    if (e.code !== "Space" || e.repeat) return;
+
+    e.preventDefault();
+    if (phase === "intro-dialogue") {
+      advanceIntroDialogue();
+    } else if (phase === "rhythm") {
+      rhythmController.triggerHit();
+    } else if (
+      phase === "outro-dialogue" &&
+      rhythmActionBtn &&
+      !rhythmActionBtn.hidden &&
+      rhythmActionBtn.dataset.outcome === "success"
+    ) {
+      completeRhythmBranch();
     }
   });
 
   if (rhythmActionBtn) {
-    rhythmActionBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const outcome = rhythmActionBtn.dataset.outcome;
-      if (outcome !== "success" && outcome !== "failure") return;
-
-      const success = outcome === "success";
-      const litCandles =
-        TOTAL_CANDLES -
-        (success ? PASS_EXTINGUISH_COUNT : FAIL_EXTINGUISH_COUNT);
-      phase = "inactive";
-      window.dispatchEvent(
-        new CustomEvent("rhythmBranchCompleted", {
-          detail: { success, litCandles, gender: selectedGender },
-        }),
-      );
-      if (window.parent !== window) {
-        window.parent.postMessage(
-          {
-            type: "rhythmBranchCompleted",
-            success,
-            litCandles,
-          },
-          "*",
-        );
+    rhythmActionBtn.addEventListener("click", () => {
+      if (
+        phase !== "outro-dialogue" ||
+        rhythmActionBtn.dataset.outcome !== "failure"
+      ) {
+        return;
       }
+      completeRhythmBranch();
     });
+  }
+
+  function completeRhythmBranch() {
+    const outcome = rhythmActionBtn?.dataset.outcome;
+    if (outcome !== "success" && outcome !== "failure") return;
+
+    const success = outcome === "success";
+    const litCandles =
+      TOTAL_CANDLES -
+      (success ? PASS_EXTINGUISH_COUNT : FAIL_EXTINGUISH_COUNT);
+    phase = "inactive";
+    window.dispatchEvent(
+      new CustomEvent("rhythmBranchCompleted", {
+        detail: { success, litCandles, gender: selectedGender },
+      }),
+    );
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        {
+          type: "rhythmBranchCompleted",
+          success,
+          litCandles,
+        },
+        "*",
+      );
+    }
   }
 
   window.addEventListener("startRhythmBranch", () => {
@@ -2472,7 +2604,10 @@ document.addEventListener("DOMContentLoaded", () => {
     rhythmScene.classList.add("is-active");
     resetCandles();
     extinguishCandlesFromRight(PASS_EXTINGUISH_COUNT, true);
-    if (rhythmActionBtn) rhythmActionBtn.hidden = true;
+    if (rhythmActionBtn) {
+      rhythmActionBtn.hidden = true;
+      rhythmActionBtn.disabled = true;
+    }
     playIntroDialogueLine(0);
   });
 
@@ -3058,7 +3193,7 @@ const commonDialoguesRounds = [
 
       appendSpeechBubble({
         side: "left",
-        text: "……願你的言辭在主面前毫無虛假。進入下一階段吧。",
+        text: "……願你的言辭在主面前毫無虛假。",
       });
 
       if (typingStatusBadge) {

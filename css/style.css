@@ -2071,7 +2071,7 @@ body {
     position: absolute;
     z-index: 4;
     left: 50%;
-    bottom: 1.5%;
+    bottom: 5%;
     margin: 0;
     transform: translateX(-50%);
     color: #ffffff;
@@ -2262,6 +2262,39 @@ body {
     font-size: clamp(20px, 1.8vw, 28px);
 }
 
+.question-bubble-text {
+    animation: questionTextGlow 2.4s ease-in-out infinite;
+}
+
+.question-bubble.is-typing .question-bubble-text::after {
+    content: "";
+    display: inline-block;
+    width: 1px;
+    height: 0.95em;
+    margin-left: 0.12em;
+    background: currentColor;
+    vertical-align: -0.08em;
+    animation: questionTypewriterCaret 0.7s steps(2, start) infinite;
+}
+
+@keyframes questionTextGlow {
+    0%,
+    100% {
+        text-shadow: 0 0 3px rgba(255, 244, 202, 0.35);
+    }
+    50% {
+        text-shadow:
+            0 0 7px rgba(255, 244, 202, 0.78),
+            0 0 16px rgba(214, 225, 255, 0.42);
+    }
+}
+
+@keyframes questionTypewriterCaret {
+    50% {
+        opacity: 0;
+    }
+}
+
 .question-bubble::after,
 .speech-bubble::after {
     content: "";
@@ -2306,6 +2339,11 @@ body {
     .speech-bubble {
         opacity: 1;
         transform: none;
+    }
+
+    .question-bubble-text,
+    .question-bubble.is-typing .question-bubble-text::after {
+        animation: none;
     }
 }
 
@@ -2728,7 +2766,7 @@ body {
   animation: cursorBlink 0.75s steps(2, start) infinite;
 }
 
-/* 點擊繼續提示按鈕*/
+/* 點擊繼續提示按鈕 */
 
 .rhythm-intro-hint-2 {
   position: absolute;
@@ -3115,16 +3153,12 @@ body {
   width: auto;
   right: auto;
 
-  /* 不使用明顯綠色方框 */
-  border: none;
-
-  /* 柔和的古金色光帶 */
+  border-right: 2px solid rgba(244, 215, 164, 0.8);
+  border-left: 2px solid rgba(244, 215, 164, 0.8);
   background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(195, 164, 118, 0.06) 20%,
-      rgba(213, 183, 137, 0.18) 50%,
-      rgba(195, 164, 118, 0.06) 80%,
-      transparent 100%);
+      rgba(195, 164, 118, 0.04) 0%,
+      rgba(213, 183, 137, 0.3) 50%,
+      rgba(195, 164, 118, 0.04) 100%);
 }
 
 
@@ -3187,9 +3221,10 @@ body {
 /* 玩家成功命中 */
 .rhythm-ecg.is-hit .rhythm-ecg-window {
   background: linear-gradient(90deg,
-      transparent,
-      rgba(221, 188, 130, 0.30),
-      transparent);
+      rgba(221, 188, 130, 0.12) 0%,
+      rgba(255, 230, 177, 0.48) 50%,
+      rgba(221, 188, 130, 0.12) 100%);
+  border-color: rgba(255, 240, 205, 0.8);
 }
 
 /* 成功：暖金色波形 */
@@ -3560,11 +3595,6 @@ body {
 }
 
 
-.rhythm-instruction-box.is-clickable:hover {
-  border-color: rgba(216, 222, 255, 0.7);
-  box-shadow: 0 14px 32px rgba(6, 6, 24, 0.65);
-}
-
 .rhythm-instruction-text {
   margin: 0;
   color: #ffffff;
@@ -3589,7 +3619,7 @@ body {
     background-color 0.2s ease;
 }
 
-.rhythm-action-btn:hover {
+.rhythm-action-btn:not(:disabled):hover {
   background-color: #ad2570;
   transform: translateY(-2px);
 }

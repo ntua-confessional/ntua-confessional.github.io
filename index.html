@@ -676,7 +676,7 @@
 <section class="rhythm-scene" id="rhythmScene" aria-label="心跳節奏檢定" data-gender="male">
     <div class="rhythm-dialogue-box" id="rhythmDialogueBox" role="group" aria-label="神父對話框">
         <p class="rhythm-dialogue-text" id="rhythmDialogueText"></p>
-        <span class="dialogue-next-hint" id="dialogueNextHint">點擊繼續 ▾</span>
+        <span class="dialogue-next-hint" id="dialogueNextHint">按空白鍵繼續 ▾</span>
     </div>
 
     <div class="rhythm-track-area is-standby" id="rhythmTrackArea">
@@ -721,7 +721,8 @@
 
     <div class="rhythm-instruction-box" id="rhythmInstructionBox">
         <p class="rhythm-instruction-text" id="rhythmInstructionText"></p>
-        <button type="button" class="rhythm-action-btn" id="rhythmActionBtn" hidden>繼續對話</button>
+        <button type="button" class="rhythm-action-btn" id="rhythmActionBtn" disabled hidden
+            aria-live="polite"></button>
     </div>
 </section>
 
@@ -872,7 +873,7 @@
     <div class="dust" aria-hidden="true"></div>
     <section class="dialogues" aria-label="主角的內心獨白">
       <p class="dialogue" data-text="一切如同計畫一般"><span></span></p>
-      <p class="dialogue" data-text="感謝您成為我的刀下亡魂"><span></span></p>
+      <p class="dialogue" data-text="歡迎您成為我的刀下亡魂"><span></span></p>
       <p class="dialogue" data-text="……我親愛的神父"><span></span></p>
     </section>
     <section class="verdict" aria-labelledby="concealed-endingTitle" inert>
