@@ -915,7 +915,52 @@
     </div>
 </template>
 
-    <button class="sound-control" id="soundControl" type="button" aria-pressed="true">音效：開</button>
+    <audio id="backgroundMusic" src="bg_music/C_music.wav" preload="metadata" loop></audio>
+    <div id="audioControls">
+        <div class="audio-settings-backdrop" id="audioSettingsBackdrop" aria-hidden="true" hidden></div>
+        <button type="button" class="audio-settings-trigger" id="audioSettingsTrigger"
+            aria-label="開啟音量設定" aria-controls="audioSettingsPanel" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M3 7h8m6 0h4M3 17h4m6 0h8"/>
+                <circle cx="14" cy="7" r="3"/>
+                <circle cx="10" cy="17" r="3"/>
+            </svg>
+            <span>音量設定</span>
+        </button>
+        <section class="audio-settings-panel" id="audioSettingsPanel"
+            role="dialog" aria-modal="false" aria-label="聲音設定" hidden>
+            <div class="audio-settings-title">
+                <span aria-hidden="true">◇</span><h2>聲音設定</h2><span aria-hidden="true">◇</span>
+            </div>
+            <div class="audio-control-group">
+                <div class="audio-control-heading">
+                    <label for="bgmVolume">背景音樂</label>
+                    <output id="bgmVolumeValue" for="bgmVolume">10%</output>
+                </div>
+                <div class="audio-control-row">
+                    <input type="range" id="bgmVolume" min="0" max="100" value="10">
+                    <button type="button" class="audio-mute-button" id="bgmMute"
+                        aria-label="背景音樂靜音" aria-pressed="false">♪</button>
+                </div>
+            </div>
+            <div class="audio-control-group">
+                <div class="audio-control-heading">
+                    <label for="sfxVolume">遊戲音效</label>
+                    <output id="sfxVolumeValue" for="sfxVolume">80%</output>
+                </div>
+                <div class="audio-control-row">
+                    <input type="range" id="sfxVolume" min="0" max="100" value="80">
+                    <button type="button" class="audio-mute-button" id="sfxMute"
+                        aria-label="遊戲音效靜音" aria-pressed="false">♫</button>
+                </div>
+            </div>
+        </section>
+        <div class="audio-notices">
+            <p class="audio-status" id="musicStatus" role="status" hidden></p>
+            <p class="audio-status" id="soundStatus" role="status" hidden></p>
+            <p class="audio-status" id="audioStorageStatus" role="status" hidden></p>
+        </div>
+    </div>
 
 <!-- 蠟燭游標：使用透明背景 PNG 圖片 -->
 <div id="candleCursor" class="candle-cursor" aria-hidden="true">
