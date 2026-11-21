@@ -2809,7 +2809,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (rhythmCandlesImg) {
-      rhythmCandlesImg.src = "./images/bg/IMG_8976.PNG";
+      rhythmCandlesImg.src = "./images/bg/7candle.PNG";
     }
   }
   // =========================================

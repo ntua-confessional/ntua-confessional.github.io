@@ -219,7 +219,7 @@
     <section class="confession-start-scene" id="nextScene" aria-label="開始告解">
         <!-- 左右雙燭台與燭火背景圖層 -->
         <div class="candlfire-layer" aria-hidden="true">
-            <img class="candlfire-img" id="candlfireImg" src="./images/img_candlfire_4.0.png" alt="" />
+            <img class="candlfire-img" id="candlfireImg" src="./images/bg/candlefire.png" alt="" />
             <!-- 左側三處燭火微光 -->
             <span class="side-flame-glow left-flame-1"></span>
             <span class="side-flame-glow left-flame-2"></span>
@@ -240,7 +240,7 @@
     <!-- 第四頁-1：故事背景 -->
     <section class="story-intro-scene" id="storyIntroScene" aria-label="故事背景">
         <div class="candlfire-layer" aria-hidden="true">
-            <img class="candlfire-img" src="./images/img_candlfire_4.0.png" alt="" />
+            <img class="candlfire-img" src="./images/bg/candlefire.png" alt="" />
             <span class="side-flame-glow left-flame-1"></span>
             <span class="side-flame-glow left-flame-2"></span>
             <span class="side-flame-glow left-flame-3"></span>
@@ -518,11 +518,11 @@
     <section class="warning-scene" id="warningScene" aria-label="遊戲警告提示">
         <!-- 背景圖層：燭台 SVG + 動態燭火與餘燼 -->
         <div class="warning-bg-layer" aria-hidden="true">
-            <img class="warning-candelfire-img" id="warningCandelfireImg" src="./images/img_candelfire_5.0.svg"
+            <img class="warning-candlefire-img" id="warningCandlefireImg" src="./images/bg/candlefire_1.svg"
                 alt="" />
 
-            <!-- 與 16:9 背景燭芯對齊的 SVG 動態火光與餘燼層 -->
-            <svg class="warning-flames-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"
+            <!-- 與燭台素材共用座標的動態火光與餘燼層 -->
+            <svg class="warning-flames-svg" viewBox="0 0 1851 1041"
                 xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <radialGradient id="warnFlameHalo" cx="50%" cy="50%" r="50%">
@@ -548,52 +548,52 @@
                 </defs>
 
                 <!-- 左上燭火 -->
-                <g class="warn-flame-unit wf-1">
+                <g class="warn-flame-unit wf-1" transform="translate(55.7 -8)">
                     <circle class="warn-halo" cx="355" cy="18" r="95" fill="url(#warnFlameHalo)" />
                     <path class="warn-tongue" filter="url(#warnFlameGlow)" fill="url(#warnFlameCore)"
                         d="M 355 -16 C 367 4 369 20 355 32 C 341 20 343 4 355 -16 Z" />
                 </g>
 
                 <!-- 左中上主燭火 -->
-                <g class="warn-flame-unit wf-2">
-                    <circle class="warn-halo" cx="634" cy="115" r="125" fill="url(#warnFlameHalo)" />
+                <g class="warn-flame-unit wf-2" transform="translate(100.3 69)">
+                    <circle class="warn-halo" cx="634" cy="83" r="125" fill="url(#warnFlameHalo)" />
                     <path class="warn-tongue" filter="url(#warnFlameGlow)" fill="url(#warnFlameCore)"
                         d="M 634 72 C 649 98 651 118 634 134 C 617 118 619 98 634 72 Z" />
                 </g>
 
                 <!-- 左下內側燭火 -->
-                <g class="warn-flame-unit wf-3">
-                    <circle class="warn-halo" cx="731" cy="458" r="105" fill="url(#warnFlameHalo)" />
+                <g class="warn-flame-unit wf-3" transform="translate(117.5 108)">
+                    <circle class="warn-halo" cx="731" cy="436.4" r="105" fill="url(#warnFlameHalo)" />
                     <path class="warn-tongue" filter="url(#warnFlameGlow)" fill="url(#warnFlameCore)"
                         d="M 731 422 C 743 442 745 460 731 474 C 717 460 719 442 731 422 Z" />
                 </g>
 
                 <!-- 右下內側燭火 -->
-                <g class="warn-flame-unit wf-4">
-                    <circle class="warn-halo" cx="882" cy="458" r="105" fill="url(#warnFlameHalo)" />
+                <g class="warn-flame-unit wf-4" transform="translate(136.6 100)">
+                    <circle class="warn-halo" cx="882" cy="436.6" r="105" fill="url(#warnFlameHalo)" />
                     <path class="warn-tongue" filter="url(#warnFlameGlow)" fill="url(#warnFlameCore)"
                         d="M 882 422 C 894 442 896 460 882 474 C 868 460 870 442 882 422 Z" />
                 </g>
 
                 <!-- 右中上主燭火 -->
-                <g class="warn-flame-unit wf-5">
-                    <circle class="warn-halo" cx="950" cy="115" r="125" fill="url(#warnFlameHalo)" />
+                <g class="warn-flame-unit wf-5" transform="translate(148 47)">
+                    <circle class="warn-halo" cx="950" cy="80.5" r="125" fill="url(#warnFlameHalo)" />
                     <path class="warn-tongue" filter="url(#warnFlameGlow)" fill="url(#warnFlameCore)"
                         d="M 950 72 C 965 98 967 118 950 134 C 933 118 935 98 950 72 Z" />
                 </g>
 
                 <!-- 右上燭火 -->
-                <g class="warn-flame-unit wf-6">
-                    <circle class="warn-halo" cx="1226" cy="18" r="95" fill="url(#warnFlameHalo)" />
+                <g class="warn-flame-unit wf-6" transform="translate(186.2 27)">
+                    <circle class="warn-halo" cx="1226" cy="3" r="95" fill="url(#warnFlameHalo)" />
                     <path class="warn-tongue" filter="url(#warnFlameGlow)" fill="url(#warnFlameCore)"
                         d="M 1226 -16 C 1238 4 1240 20 1226 32 C 1212 20 1214 4 1226 -16 Z" />
                 </g>
 
                 <!-- 飄升金色火星餘燼 -->
-                <circle class="warn-ember em-1" cx="628" cy="95" r="3" fill="#ffd982" />
-                <circle class="warn-ember em-2" cx="645" cy="82" r="2.2" fill="#ffae52" />
-                <circle class="warn-ember em-3" cx="942" cy="92" r="3" fill="#ffd982" />
-                <circle class="warn-ember em-4" cx="962" cy="80" r="2.2" fill="#ffae52" />
+                <circle class="warn-ember em-1" cx="728.3" cy="164" r="3" fill="#ffd982" />
+                <circle class="warn-ember em-2" cx="745.3" cy="151" r="2.2" fill="#ffae52" />
+                <circle class="warn-ember em-3" cx="1090" cy="139" r="3" fill="#ffd982" />
+                <circle class="warn-ember em-4" cx="1110" cy="127" r="2.2" fill="#ffae52" />
             </svg>
         </div>
 
@@ -630,7 +630,7 @@
         <div class="question-choice-panel" id="questionChoicePanel">
             <div class="question-scoreboard" id="questionScoreboard" role="img"
                 aria-label="蠟燭記分板，七根燭火全亮" aria-live="polite">
-                <img class="question-scoreboard-art" src="./images/bg/IMG_8976.PNG" alt="" />
+                <img class="question-scoreboard-art" src="./images/bg/7candle.PNG" alt="" />
             </div>
             <button type="button" class="question-choice">
                 <svg class="question-choice-border" viewBox="0 0 420 65" preserveAspectRatio="none" aria-hidden="true">
@@ -754,7 +754,7 @@
 
     <div class="rhythm-candles-wrap" id="rhythmCandlesWrap" aria-label="燭火狀態">
         <img class="rhythm-candles-img" id="rhythmCandlesImg"
-            src="./images/bg/IMG_8976.PNG" alt="蠟燭" />
+            src="./images/bg/7candle.PNG" alt="蠟燭" />
     </div>
 
     <div class="rhythm-instruction-box" id="rhythmInstructionBox">
@@ -822,7 +822,7 @@
 
     <div class="excuse-candles-wrap" id="excuseCandlesWrap" aria-label="燭火狀態">
         <img class="excuse-candles-img" id="excuseCandlesImg"
-            src="./images/bg/IMG_8976.PNG" alt="七支蠟燭" />
+            src="./images/bg/7candle.PNG" alt="七支蠟燭" />
     </div>
 
     <div class="excuse-feedback-banner" id="excuseFeedbackBanner" aria-live="polite"></div>

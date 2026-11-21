@@ -1891,6 +1891,15 @@ body {
     -webkit-user-drag: none;
 }
 
+/* 燭台和火光共用相同的位置。 */
+.warning-candlefire-img,
+.warning-flames-svg {
+    transform: translate(
+        calc(52vw - max(10.79vw, 19.18vh) - 734.3px),
+        calc(52vh - max(20.54vw, 36.5156vh) - 203px)
+    );
+}
+
 /* 若本地使用黑底 JPG 備援圖檔，自動濾除純黑底色並保留原本燭台與火光色澤 */
 .warning-candelfire-img.is-jpg-fallback {
     mix-blend-mode: lighten;
@@ -1900,8 +1909,9 @@ body {
 .warning-flames-svg {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
+    top: -40px;
+    width: 1851px;
+    height: 1041px;
     overflow: visible;
     pointer-events: none;
 }
@@ -4043,7 +4053,7 @@ body {
   filter: contrast(1.05) brightness(1.06);
 }
 /* =========================================
-   4. 左下角七支蠟燭素材（IMG_8976.PNG）
+   4. 左下角七支蠟燭素材（7candle.PNG）
    ========================================= */
 /* Match the earlier scoreboard size; offsets align the wax base and left drip to the typing frame. */
 .excuse-candles-wrap {
@@ -4074,6 +4084,42 @@ body {
   height: 100%;
   object-fit: contain;
   -webkit-user-drag: none;
+}
+
+.excuse-scene .candle-flame-slot {
+  position: absolute;
+  width: clamp(13.46px, 1.923vw, 34.62px);
+  height: clamp(13.95px, 1.919vw, 32.56px);
+  transform: translate(-50%, -100%);
+}
+
+.excuse-scene .slot-1 {
+  left: 9.635%;
+  top: 56.667%;
+}
+.excuse-scene .slot-2 {
+  left: 13.281%;
+  top: 60.37%;
+}
+.excuse-scene .slot-3 {
+  left: 16.406%;
+  top: 55%;
+}
+.excuse-scene .slot-4 {
+  left: 20.417%;
+  top: 59.444%;
+}
+.excuse-scene .slot-5 {
+  left: 24.583%;
+  top: 58.333%;
+}
+.excuse-scene .slot-6 {
+  left: 28.646%;
+  top: 59.815%;
+}
+.excuse-scene .slot-7 {
+  left: 32.188%;
+  top: 64.444%;
 }
 
 @media (max-width: 650px) {
