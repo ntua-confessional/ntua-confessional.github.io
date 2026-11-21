@@ -543,6 +543,122 @@ const gameSfx = (() => {
   return { play };
 })();
 
+function createTypewriter(defaultSpeed, punctuationPause) {
+  let timerId = null;
+  let isTyping = false;
+  let fullText = "";
+  let targetEl = null;
+  let onDoneCallback = null;
+  let onUpdateCallback = null;
+
+  function stop() {
+    if (timerId !== null) {
+      clearTimeout(timerId);
+      timerId = null;
+    }
+    isTyping = false;
+    if (targetEl) targetEl.classList.remove("is-typing");
+  }
+
+  function finishImmediately() {
+    if (!isTyping) return false;
+    stop();
+    if (targetEl) {
+      targetEl.textContent = fullText;
+      if (onUpdateCallback) onUpdateCallback();
+    }
+    const callback = onDoneCallback;
+    onDoneCallback = null;
+    if (typeof callback === "function") callback();
+    return true;
+  }
+
+  function start(el, text, speed = defaultSpeed, onDone = null, withSound = true, onUpdate = null) {
+    stop();
+    if (!el) return;
+    targetEl = el;
+    fullText = text;
+    onDoneCallback = onDone;
+    onUpdateCallback = onUpdate;
+    isTyping = true;
+    el.textContent = "";
+    el.classList.add("is-typing");
+
+    const chars = Array.from(text);
+    let index = 0;
+
+    function step() {
+      if (!isTyping) return;
+      if (index >= chars.length) {
+        stop();
+        const callback = onDoneCallback;
+        onDoneCallback = null;
+        if (typeof callback === "function") callback();
+        return;
+      }
+
+      const character = chars[index++];
+      el.textContent += character;
+      if (onUpdateCallback) onUpdateCallback();
+      if (withSound) playTypingSound(character, index);
+      const pause = "，。！？…、".includes(character) ? punctuationPause : 0;
+      timerId = setTimeout(step, speed + pause);
+    }
+
+    step();
+  }
+
+  return {
+    start,
+    finishImmediately,
+    stop,
+    get active() {
+      return isTyping;
+    },
+  };
+}
+
+function createCandleController(container, total, interval) {
+  let timers = [];
+
+  function clearTimers() {
+    timers.forEach((id) => clearTimeout(id));
+    timers = [];
+  }
+
+  function reset() {
+    clearTimers();
+    if (!container) return;
+    container.querySelectorAll(".candle-flame-slot").forEach((slot) => {
+      slot.classList.remove("is-extinguished");
+    });
+  }
+
+  function extinguish(count, immediate = false) {
+    clearTimers();
+    if (!container) return;
+    const clampedCount = Math.min(total, Math.max(0, count));
+    for (let i = 0; i < clampedCount; i += 1) {
+      const targetIndex = total - 1 - i;
+      const slot = container.querySelector(
+        `.candle-flame-slot[data-candle-index="${targetIndex}"]`,
+      );
+      if (slot && !slot.classList.contains("is-extinguished")) {
+        if (immediate) {
+          slot.classList.add("is-extinguished");
+          continue;
+        }
+        timers.push(setTimeout(() => {
+          slot.classList.add("is-extinguished");
+          gameSfx.play("candle-out");
+        }, i * interval));
+      }
+    }
+  }
+
+  return { reset, extinguish };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // 開場至警告頁：快取節點、管理場景狀態與共用動畫計時器。
   const introScene = document.getElementById("introScene");
@@ -559,6 +675,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const candlfireImg = document.getElementById("candlfireImg");
   const confessionTitleImg = document.getElementById("confessionTitleImg");
   const startConfessionBtn = document.getElementById("startConfessionBtn");
+
+  const storyIntroScene = document.getElementById("storyIntroScene");
+  const storyIntroContent = document.getElementById("storyIntroContent");
+  const storyIntroText = document.getElementById("storyIntroText");
+  const storyIntroTemplate = storyIntroText.cloneNode(true);
+  const storyIntroTextNodes = document.createTreeWalker(storyIntroTemplate, NodeFilter.SHOW_TEXT);
+  while (storyIntroTextNodes.nextNode()) {
+    const node = storyIntroTextNodes.currentNode;
+    node.textContent = node.textContent.replace(/\r?\n\s*/g, "");
+  }
 
   const confessionRoomScene = document.getElementById("confessionRoomScene");
   const memoParallaxScene = document.getElementById("memoParallaxScene");
@@ -618,6 +744,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let typewriterChars = [];
   let isTypingBriefing = false;
   let isBriefingDone = false;
+  let isTypingStory = false;
+  let storyTimer = null;
 
   // 警告頁：依燭火位置產生星火，並支援視窗調整與滑鼠風向。
   const sparksController = (() => {
@@ -946,6 +1074,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 場景流程：統一重設狀態，並依序切換角色、前情提要、教學與警告頁。
   function resetIntro() {
     clearTimers();
+    clearTimeout(storyTimer);
+    storyTimer = null;
+    isTypingStory = false;
     isTransitioning = false;
     isSelectingGender = false;
     isStartingConfession = false;
@@ -964,6 +1095,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (nextScene) {
       nextScene.classList.remove("is-active");
     }
+
+    storyIntroScene.classList.remove("is-active");
+    storyIntroText.textContent = "";
+    storyIntroContent.scrollTop = 0;
 
     if (startConfessionBtn) {
       startConfessionBtn.classList.remove("is-clicked");
@@ -1147,7 +1282,91 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 第三頁：開始告解，切到前情提要頁並啟動打字機
+  function finishStoryIntro() {
+    clearTimeout(storyTimer);
+    storyTimer = null;
+    isTypingStory = false;
+    storyIntroText.replaceChildren(
+      ...Array.from(storyIntroTemplate.childNodes, (node) => node.cloneNode(true)),
+    );
+  }
+
+  function* storyIntroCharacters(source, target) {
+    for (const node of source.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        for (const character of Array.from(node.textContent)) {
+          yield { character, target };
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node.cloneNode(false);
+        target.appendChild(element);
+        yield* storyIntroCharacters(node, element);
+      }
+    }
+  }
+
+  function startStoryIntro() {
+    storyIntroScene.classList.add("is-active");
+    storyIntroText.textContent = "";
+    storyIntroContent.scrollTop = 0;
+    isTypingStory = true;
+
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finishStoryIntro();
+      return;
+    }
+
+    const characters = storyIntroCharacters(storyIntroTemplate, storyIntroText);
+    const characterDelay = 150;
+    const inkDuration = 500;
+    let index = 0;
+    function typeNextCharacter() {
+      if (!isTypingStory) return;
+      const atBottom = storyIntroContent.scrollTop + storyIntroContent.clientHeight >=
+        storyIntroContent.scrollHeight - 2;
+      const next = characters.next();
+      if (next.done) {
+        storyTimer = setTimeout(finishStoryIntro, inkDuration - characterDelay);
+        return;
+      }
+      const { character, target } = next.value;
+      if (/\s/.test(character)) {
+        target.appendChild(document.createTextNode(character));
+      } else {
+        const stroke = document.createElement("span");
+        stroke.className = "story-intro-char";
+        stroke.textContent = character;
+        target.appendChild(stroke);
+      }
+      index += 1;
+      if (character.trim() && index % 2 === 1) {
+        gameSfx.play("briefing-pencil");
+      }
+      if (atBottom) storyIntroContent.scrollTop = storyIntroContent.scrollHeight;
+      storyTimer = setTimeout(typeNextCharacter, characterDelay);
+    }
+    typeNextCharacter();
+  }
+
+  function enterBriefingPage() {
+    if (!storyIntroScene.classList.contains("is-active") || isTypingStory) return;
+    storyIntroScene.classList.remove("is-active");
+    timers.push(setTimeout(() => {
+      if (confessionRoomScene) {
+        syncSceneGender(confessionRoomScene);
+        confessionRoomScene.classList.add("is-active");
+
+        if (memoParallaxInstance) {
+          memoParallaxInstance.enable();
+          memoParallaxInstance.updateDimensions();
+        }
+
+        startBriefingTypewriter();
+      }
+    }, 450));
+  }
+
+  // 第三頁：開始告解，切到故事背景頁
   function enterConfessionRoom() {
     if (isStartingConfession) return;
     if (!nextScene || !nextScene.classList.contains("is-active")) return;
@@ -1164,19 +1383,7 @@ document.addEventListener("DOMContentLoaded", () => {
         nextScene.classList.remove("is-active");
 
         timers.push(
-          setTimeout(() => {
-            if (confessionRoomScene) {
-              syncSceneGender(confessionRoomScene);
-              confessionRoomScene.classList.add("is-active");
-
-              if (memoParallaxInstance) {
-                memoParallaxInstance.enable();
-                memoParallaxInstance.updateDimensions();
-              }
-
-              startBriefingTypewriter();
-            }
-          }, 450),
+          setTimeout(startStoryIntro, 450),
         );
       }, 320),
     );
@@ -1219,6 +1426,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
 
     isEnteringHowTo = true;
+    gameSfx.play("character-lock");
     confessionRoomScene.classList.remove("is-active");
 
     if (memoParallaxInstance) {
@@ -1330,6 +1538,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function advanceStoryIntro() {
+    if (!storyIntroScene.classList.contains("is-active")) return;
+    if (isTypingStory) {
+      finishStoryIntro();
+    } else {
+      enterBriefingPage();
+    }
+  }
+
+  storyIntroScene.addEventListener("click", (e) => {
+    if (e.button === 0) advanceStoryIntro();
+  });
+
+  storyIntroContent.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.repeat) return;
+    e.preventDefault();
+    advanceStoryIntro();
+  });
+
   // 打字過程中點擊右側文字區塊可立即顯示完整句子與 next 按鈕
   if (briefingPanel) {
     briefingPanel.addEventListener("click", (e) => {
@@ -1354,43 +1581,35 @@ document.addEventListener("DOMContentLoaded", () => {
     howtoCandles.querySelectorAll(".mini-candle").forEach((candle) => {
       candle.addEventListener("click", (e) => {
         if (e.button === 0 && howToPlayScene.classList.contains("is-active")) {
-          const isOut = candle.classList.toggle("is-out");
-          gameSfx.play(isOut ? "candle-out" : "candle-relight");
+          candle.classList.toggle("is-out");
         }
       });
     });
   }
 
   // 第一次點擊顯示全部內容，之後點擊提示進入下一頁。
-  if (howToPlayScene) {
-    howToPlayScene.addEventListener("click", (e) => {
-      if (e.button !== 0 || !howToPlayScene.classList.contains("is-active")) return;
-      if (!howToPlayScene.classList.contains("is-revealed")) {
-        howToPlayScene.classList.add("is-revealed");
-        if (!e.target.closest(".mini-candle")) gameSfx.play("tutorial-page");
-      } else if (howtoStartPrompt && howtoStartPrompt.contains(e.target)) {
-        enterSpecialHowToPage();
+  function bindTutorialScene(scene, prompt, advance) {
+    if (!scene) return;
+    scene.addEventListener("click", (e) => {
+      if (e.button !== 0 || !scene.classList.contains("is-active")) return;
+      if (!scene.classList.contains("is-revealed")) {
+        scene.classList.add("is-revealed");
+      } else if (prompt && prompt.contains(e.target)) {
+        gameSfx.play("tutorial-page");
+        advance();
       }
     });
   }
 
-  if (specialHowToScene) {
-    specialHowToScene.addEventListener("click", (e) => {
-      if (e.button !== 0 || !specialHowToScene.classList.contains("is-active")) return;
-      if (!specialHowToScene.classList.contains("is-revealed")) {
-        specialHowToScene.classList.add("is-revealed");
-        gameSfx.play("tutorial-page");
-      } else if (specialHowtoPrompt && specialHowtoPrompt.contains(e.target)) {
-        enterWarningPage();
-      }
-    });
-  }
+  bindTutorialScene(howToPlayScene, howtoStartPrompt, enterSpecialHowToPage);
+  bindTutorialScene(specialHowToScene, specialHowtoPrompt, enterWarningPage);
 
   // 第六頁：點擊「開始遊戲」按鈕進入正式告解對話
   if (startGameBtn) {
     startGameBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       startGameBtn.classList.add("is-pressed");
+      gameSfx.play("character-lock");
       saveSelectedGender(selectedGender);
       console.log("正式開始遊戲，已選性別：", selectedGender);
       // 從第六頁進入第七頁 
@@ -1437,25 +1656,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const questionChoicePanel = document.getElementById("questionChoicePanel");
   const questionScoreboard = document.getElementById("questionScoreboard");
 
-  rhythmIntroScene.addEventListener("click", (event) => {
-    if (
-      rhythmIntroHint.classList.contains("is-visible") &&
-      !rhythmIntroHint.contains(event.target)
-    ) {
-      return;
-    }
-    window.dispatchEvent(new Event("advanceRhythmIntroDialogue"));
-  });
+  function bindIntroAdvance(scene, hint, eventName) {
+    scene.addEventListener("click", (event) => {
+      if (hint.classList.contains("is-visible") && !hint.contains(event.target)) return;
+      window.dispatchEvent(new Event(eventName));
+    });
+  }
 
-  excuseIntroScene.addEventListener("click", (event) => {
-    if (
-      excuseIntroHint.classList.contains("is-visible") &&
-      !excuseIntroHint.contains(event.target)
-    ) {
-      return;
-    }
-    window.dispatchEvent(new Event("advanceExcuseIntroDialogue"));
-  });
+  bindIntroAdvance(rhythmIntroScene, rhythmIntroHint, "advanceRhythmIntroDialogue");
+  bindIntroAdvance(excuseIntroScene, excuseIntroHint, "advanceExcuseIntroDialogue");
 
   const candleSlotsTemplate = document.getElementById("candleSlotsTemplate");
   const rhythmCandlesWrap = document.getElementById("rhythmCandlesWrap");
@@ -1487,12 +1696,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".question-choice"),
   );
 
-  // 五題結束後的完成畫面
-  const questionFinish = document.getElementById("questionFinish");
-
-  // 重新開始按鈕
-  const questionRestartBtn = document.getElementById("questionRestartBtn");
-
   function syncQuestionDialogueBounds() {
     const stageBounds = questionStage.getBoundingClientRect();
     const choiceBounds = questionChoicePanel.getBoundingClientRect();
@@ -1501,11 +1704,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener("resize", syncQuestionDialogueBounds);
 
-  // 五題流程：保存題目索引、對話進度、答案、扣分與防重複點擊狀態。
+  // 題目流程：保存題目索引、對話進度、答案、扣分與防重複點擊狀態。
 
   // 目前題目索引，0 代表第一題
   let questionIndex = 0;
   let questionDialogueIndex = 0;
+  let questionPhase = "prompt";
+  let questionFeedback = [];
+  let questionTyping = false;
 
   // 防止玩家連續點擊造成重複選擇
   let questionLocked = false;
@@ -1514,7 +1720,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let questionTimers = [];
   const QUESTION_CANDLE_EXTINGUISH_MS = 350;
 
-  // 記錄玩家在五題中選擇的答案
+  // 記錄玩家選擇的答案
   // 0 = 第一個選項
   // 1 = 第二個選項
   // 2 = 第三個選項
@@ -1524,7 +1730,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let hasTriggeredRhythmEvent = false;
   let hasTriggeredExcuseEvent = false;
 
-  // 題目資料：每題包含依序顯示的對話、最多四個選項，以及會扣分的選項索引（從 0 開始）。
+  // safeChoiceIndex 為唯一不扣分的選項（從 0 開始）；choiceKeywords 可指定填入空格的文字。
+  // choiceHints 依選項順序填寫；空字串不顯示提示。
+  // 答案、新增題目、獨白與答題後文案皆為暫定內容。
 
   const questionData = [
     //  第一題
@@ -1543,49 +1751,84 @@ document.addEventListener("DOMContentLoaded", () => {
           text: "我已許久沒有進行告解，請幫助我。",
         },
         {
+          side: "left",
+          text: "不必拘謹，若不知從何說起，便談談近日發生的事吧。",
+        },
+        {
           side: "right",
-          text: "（沉默）",
+          text: "請原諒我的生疏，這是我第一次來此傾訴。",
+        },
+         {
+          side: "right",
+          text: "昨日，我赴了奈克的邀約。",
+        },
+        {
+          side:"right",
+          text:"我們約在鎮中央見面，打算邊吃邊談些買賣。"
+
         },
         {
           side: "left",
-          text: "若不知從何說起，便談談近日發生的事吧。",
+          text: "那是甚麼時候的事呢？",
         },
         {
           side: "right",
-          text: "請原諒我的生疏，這是我第一次來此傾訴——昨日，我赴了奈克的邀約。",
-        },
-        {
-          side: "left",
-          text: "你們在何時相約？",
+          type: "thought",
+          text: "「昨晚六點，我確實與奈克見過面」",
         },
         {
           side: "right",
-          text: "我們在＿＿＿＿時，於鎮中央見面。打算邊吃邊談些生意。",
+          type: "thought",
+          text: "「不過，還是別讓神父太清楚我的行程」",
+        },
+        {
+          side: "right",
+          text: "我們在＿＿＿＿時，於鎮中央見面。",
         },
       ],
 
-      choices: ["12:00 a.m", "01:00 p.m", "02:00 p.m", "03:00 p.m"],
-      penaltyChoiceIndex: 3,
+      choices: ["我記得是18:00", "大約是18:00", "18:00左右吧", "應該是18:00"],
+      choiceHints: ["奈克那時已經到了", "湯姆那時似乎還在店裡", "得趕在打烊前完成交易", "我沒有特別留意鐘聲"],
+      choiceKeywords: ["18:00", "18:00", "18:00", "18:00"],
+      safeChoiceIndex: 3,
+      feedback: {
+        safe: [{ side: "left", text: "傍晚時分啊，街上應該還有不少行人。" },
+          { side: "right", text: "是的，還有些店尚未關門呢。" }
+        ],
+        penalty: [{ side: "left", text: "你似乎記得相當清楚。" },
+          { side: "right", text: "畢竟是事先約好的事情。"}],
+        common: [{ side: "right", text: "如今鎮上人人自危，誰都不願成為下一個目標。" },
+          { side: "left", text: "畢竟接連發生了數起命案。"},
+          { side: "right", text: "是啊。"},
+          { side: "right", text: "不過，那些死者似乎都不是甚麼值得同情的人。"},
+          { side: "left", text: "死亡不應該成為衡量一個人是否值得同情的標準"},
+          { side: "right", text: "您說的對。"}
+        ],
+      },
     },
 
     //  第二題
     {
       dialogues: [
         {
-          side: "right",
-          text: "如今鎮上人人自危，誰也不願成為下一個目標。",
-        },
-        {
           side: "left",
           text: "那麼，就說說你的生意吧。",
         },
         {
           side: "right",
-          text: "您也對這些感興趣嗎？好的，不過請先容我說完這部分。",
+          text: "您也對這些感興趣嗎？",
+        },
+         {
+          side: "right",
+          text: "好的，不過請先容我說完這部分。",
         },
         {
           side: "right",
-          text: "我跟奈克相談甚歡，後來去了酒吧，也許是因為命案的緣故，店裡實在冷清的很。",
+          text: "我跟奈克相談甚歡，後來便去了酒吧",
+        },
+        {
+          side: "right",
+          text: "也許是因為命案的緣故，店裡實在冷清的很。",
         },
         {
           side: "left",
@@ -1593,41 +1836,97 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         {
           side: "right",
-          text: "我們在酒吧的＿＿＿＿，談了一些買賣，我對這筆交易感到滿意。",
+          type: "thought",
+          text: "「那個位置……很適合觀察店裡人們的舉動」",
+        },
+         {
+          side: "right",
+          type: "thought",
+          text: "「沒必要告訴神父這些」",
+        },
+        {
+          side: "right",
+          text: "我們在酒吧的＿＿＿＿，談了一些買賣。",
         },
       ],
 
-      choices: ["舞池區", "附近小巷", "包廂裡", "吧檯座位"],
-      penaltyChoiceIndex: 1,
+      choices: ["吧檯旁", "包廂裡", "靠窗位置", "後門附近"],
+      choiceHints: ["能看見酒保工作", "靠近酒窖入口", "適合欣賞窗外景色", "方便觀察出入的人"],
+      choiceKeywords: ["吧檯旁", "包廂裡", "靠窗位置", "後門附近"],
+      safeChoiceIndex: 2,
+      feedback: {
+        safe: [{ side: "left", text: "靠窗的位置——那裡確實適合談話。" },
+          { side: "right", text: "是的，景色也不錯。" }
+        ],
+        penalty: [{ side: "left", text: "你似乎很在意酒吧內的動靜。" },
+          { side: "right", text: "那只是隨意挑選的位置。"}
+        ],
+        common: [{ side: "left", text: "看來你們談得相當愉快。" },
+        { side: "right", text: "是的，我很滿意這筆交易。" },
+        { side: "left", text: "最近鎮上加強了管制，許多東西已經不容易買到。" },
+         { side: "right", text: " 看來您也很了解鎮上的情況。" },
+      ],
+      },
     },
 
     //  第三題
     {
       dialogues: [
         {
-          side: "right",
-          text: "您想知道交易內容？",
-        },
-        {
-          side: "right",
-          text: "如您所願，既然我來到此處，自然不會有所隱瞞。",
-        },
-        {
-          side: "right",
-          text: "如今鎮上因命案戒備森嚴，許多東西都受到管制。",
-        },
-        {
           side: "left",
           text: "你買了甚麼呢？",
         },
+         {
+          side: "right",
+          text: "不是些太貴重的東西。",
+        },
         {
           side: "right",
-          text: "不過是家用的＿＿＿＿。"
+          text: "我主要向他購買了日常用品。",
+        },
+        {
+          side: "right",
+          text: "另外、他也說有一些工具可以送給我。",
+        },
+        {
+          side: "left",
+          text: "例如呢？",
+        },
+        {
+          side: "right",
+          type: "thought",
+          text: "「奈克賣給我的那把斧頭，確實十分趁手」",
+        },
+         {
+          side: "right",
+          type: "thought",
+          text: "「只是它的用途……最好永遠別讓其他人知道」",
+        },
+        {
+          side: "right",
+          text: "比如說，他很慷慨地將他用不到的＿＿＿＿給了我。"
         },
       ],
 
-      choices: ["鋸子", "菜刀", "斧頭", "小刀"],
-      penaltyChoiceIndex: 2,
+      choices: ["重量適中的斧頭", "有些鈍的舊斧頭", "重新磨過的斧頭", "小巧的手斧"],
+      choiceHints: ["便於揮砍", "用來整理庭院", "刃口十分鋒利", "適合在狹窄空間使用"],
+      choiceKeywords: ["斧頭", "斧頭", "斧頭", "斧頭"],
+      safeChoiceIndex: 1,
+      feedback: {
+        safe: [{ side: "left", text: "只是日常用的器具嗎？" },
+          { side: "right", text: "是的，我的庭院已經許久沒有打理。" }
+        ],
+        penalty: [{ side: "left", text: "那不像是隨手會買的東西。" },
+          { side: "right", text: "最近鎮上不太平，總得有些防身的東西。" }
+        ],
+        common: [{ side: "right", text: "我想，我應該說明得更仔細一些。" },
+          { side: "right", text: "畢竟您似乎不太滿意我的回答。" },
+          { side: "left", text: "我只是在想，現在的鎮民究竟有多麼不安。" },
+          { side: "left", text: "但願長夜能庇護所有無辜之人。" },
+          { side: "right", text: "……無辜之人。" },
+          { side: "right", text: "…真是個有趣的說法。" },
+        ],
+      },
     },
 
     //  第四題
@@ -1635,69 +1934,362 @@ document.addEventListener("DOMContentLoaded", () => {
       dialogues: [
         {
           side: "left",
-          text: "(沉默)",
-        },
-        {
-          side: "right",
-          text: "我對於在您面前撒謊感到抱歉，請原諒我———準確而言，是用來防身的。",
-        },
-        {
-          side: "right",
-          text: "我實在太擔心兇手會再度出現，因此，即使鎮上現在對刀械管制森嚴，我也必須這麼做。",
-        },
-        {
-          side: "left",
-          text: "你在酒吧除了談生意之外，還做了甚麼？",
+          text: " 那麼，除了奈克，你還與其他人交談過嗎？",
         },
         {
           side: "right",
           text: "……神父，您這是在懷疑我嗎？",
         },
+          {
+          side: "left",
+          text: "並非如此。",
+        },
         {
           side: "right",
-          text: "……罷了，我會回答您，我記得我還曾與酒吧內的＿＿＿＿交談過幾句。",
+          text: "……罷了，我會回答您的。",
+        },
+        {
+          side: "right",
+          text: " 昨晚奈克離開後，店裡還剩下一些人。",
+        },
+        {
+          side: "right",
+          type: "thought",
+          text: "「酒保……那個滿口謊言的傢伙」",
+        },
+         {
+          side: "right",
+          type: "thought",
+          text: "「昨夜還向我炫耀那些見不得光的勾當」",
+        },
+        {
+          side: "right",
+          text: "我記得，我還曾與酒吧內的＿＿＿＿交談過幾句。",
         },
       ],
 
-      choices: ["泰德(服務生)", "湯姆(酒保)", "梅茲(商人)", "道卡茲(酒客)"],
-      penaltyChoiceIndex: 1,
+      choices: ["學徒", "酒保", "旅客", "侍者"],
+      choiceHints: ["(似乎正準備離開)", "(正在吧檯整理帳目)", "(知道昨夜的巡邏路線)", "(曾提起酒窖的後門)"],
+      choiceKeywords: ["學徒", "酒保", "旅客", "侍者"],
+      safeChoiceIndex: 0,
+      feedback: {
+        safe: [{ side: "left", text: "看來只是些閒談。" },
+          { side: "right", text: "確實沒什麼值得在意的。" }
+        ],
+        penalty: [{ side: "left", text: " 你似乎對湯姆相當熟悉。" },
+          { side: "right", text: "不過是偶爾聽他說些閒話罷了。" }
+        ],
+        common: [{ side: "left", text: " 說到酒吧，酒保湯姆昨夜失蹤了。" },
+         { side: "right", text: "……失蹤？" },
+         { side: "left", text: " 你認識他嗎？" },
+         { side: "right", text: " 見過幾面，談不上熟悉。" },
+         { side: "left", text: " 他曾來教堂祈禱。" },
+        { side: "right", text: "  是嗎？ 看來他也有想要尋求寬恕的事情。" },
+      ],
+      },
     },
 
     //  第五題
     {
       dialogues: [
         {
+          side: "left",
+          text: " 我聽說，警方正在調查昨晚出入酒吧的客人。",
+        },
+        {
           side: "right",
-          text: "他是個十足有趣的人，似乎對鎮上的一且瞭如指掌，即使我和他並不太熟悉，但他依舊知無不言。",
+          text: " ……神父，您這是在警告我嗎？",
         },
         {
           side: "left",
-          text: "你是否知道，你的行蹤與警方推測的兇手路線重疊？",
+          text: "只是希望你能小心。",
+        },
+        {
+          side: "right",
+          text: "感謝您的關心。",
         },
         {
           side: "left",
-          text: "甚至有人反應，目擊你出現在案發現場。",
+          text: "那麼，你離開酒吧後去了哪裡？",
         },
         {
           side: "right",
-          text: "我？這不可能！並且就我所知，案發地點並未公開？",
+          type: "thought",
+          text: "「昨晚的事情，現在回想起來還真有些混亂」",
         },
         {
           side: "right",
-          text: "喔、不，您讓我開始擔憂自身的安危了。",
-        },
-        {
-          side: "left",
-          text: "那麼，你後來又去了哪裡？",
+          type: "thought",
+          text: "「離開後直接回家，是最不容易惹人懷疑的說法」",
         },
         {
           side: "right",
-          text: "我最後去了＿＿＿＿。",
+          text: "我之後去了＿＿＿＿。",
         },
       ],
 
-      choices: ["巷口", "住家", "旅店", "麵包店"],
-      penaltyChoiceIndex: 0,
+      choices: ["酒吧後的巷弄", "酒窖附近", "僻靜的街道", "自己的住處"],
+      choiceHints: ["稍微停留了一會兒", "有些事情尚未完成", "", "之後便休息了"],
+      choiceKeywords: ["巷弄", "酒窖", "街道", "住處"],
+      safeChoiceIndex: 3,
+      feedback: {
+        safe: [{ side: "left", text: "想必昨晚也讓你疲憊不堪。" },
+          { side: "right", text: "是啊，回去之後便早早休息了。" }
+        ],
+        penalty: [{ side: "left", text: "那附近正是警方調查的範圍。" },
+          { side: "right", text: "是嗎？我並不清楚。" }
+        ],
+        common: [{ side: "right", text: "神父，您似乎仍有疑慮。" },
+          { side: "left", text: "你不覺得，這些命案實在太過巧合了嗎？" },
+          { side: "right", text: "巧合？" },
+          { side: "left", text: "那些死者，都曾涉及一些不光彩的事情。" },
+          { side: "right", text: "似乎是這樣沒錯。" },
+          { side: "left", text: "你似乎並不驚訝。" },
+           { side: "right", text: "小鎮的傳聞總是這樣的，一傳十、十傳百，很快的，大家都知道了。" },
+        ],
+      },
+    },
+
+    // 第六至第九題的題目、答案與文案可依最終劇情調整。
+    //第六題
+    {
+      dialogues: [
+        { 
+          side: "right",
+          text: "說起湯姆，鎮上一直流傳著一些關於他的傳聞。" 
+        },
+        { 
+          side: "right",
+          text: "有人說，他曾替某些有權勢的人做事。"
+        },
+        { 
+          side: "right",
+          text: "這倒不令人意外。"
+        },
+        { 
+          side: "left",
+          text: "你似乎知道些什麼？"
+        },
+        { 
+          side: "right", 
+          text: "我聽到了一些流言。"
+        },
+        { 
+          side: "right",
+          type: "thought", 
+         text: "「湯姆知道得太多，也因此得意忘形」" 
+        },
+        { 
+          side: "right",
+          type: "thought", 
+         text: "「他以為那些秘密能保護自己……真是愚蠢」" 
+        },
+        { side: "right", 
+          text: "我聽說，他曾向別人提起＿＿＿＿。" },
+      ],
+
+      choices: ["私人帳本", "私人信件", "交易紀錄", "舊文件"],
+      choiceHints: ["資金流通不明", "與鎮上權貴往來", "尚未結清的酒吧進貨單", "鎮上權貴簽署，早該焚燒銷毀"],
+      safeChoiceIndex: 2,
+      feedback: {
+        safe: [{ side: "left", text: "看起來只是一些生意上的煩惱。"},
+         { side: "right", text: "畢竟最近鎮上不太平，難免讓人多想。" }
+        ],
+        penalty: [{ side: "left", text: "這些聽起來，似乎不是應該聲張的東西" },
+         { side: "right", text: "都是些聽來的、空穴來風的傳聞。" }
+        ],
+        common: [{ side: "left", text: "流言終究只是流言。" },
+          { side: "right", text: "是啊。" },
+          { side: "right", text: "不過，倘若那些事情都是真的呢？" },
+          { side: "left", text: "即便如此，也應交由法律裁決。" },
+          { side: "right", text: "法律———真是個方便的詞。" }
+        ],
+      },
+    },
+
+    //第七題
+    {
+      dialogues: [
+        {
+           side: "left",
+            text: "今早警方在酒窖發現了湯姆的屍體。" 
+          },
+        { 
+          side: "right",
+           text: "我感到很遺憾，但這真是令人不安。"
+           },
+        { 
+          side: "left",
+           text: "有人說，昨夜曾看見一名陌生人進出酒窖。"
+           },
+        { 
+          side: "right",
+          text: "但酒吧裡本來就有不少陌生客人。"
+        },
+        { 
+          side: "left",
+          text: "你昨夜是否也曾靠近那裡？"
+        },
+        { 
+          side: "right",
+          text: "只是經過。"
+        },
+        { 
+          side: "left",
+          text: "那你有注意到什麼異常嗎？"
+        },
+        { 
+          side: "right",
+          type: "thought",
+          text: "「那個酒窖……現在想來，還真是個令人難忘的地方」"
+        },
+        { 
+          side: "right",
+          text: " 異常的話，我倒是記得＿＿＿＿。"
+        },
+      ],
+      choices: ["特別陰冷潮濕", "酒桶似乎被移動過", "幾塊地磚顏色特別白", "深處似乎有摩擦聲"],
+      choiceHints: ["", "", "", ""],
+      safeChoiceIndex: 0,
+      feedback: {
+        safe: [{ side: "left", text: "那地方向來陰冷。" },
+          { side: "right", text: "那就沒什麼特別的了。" }
+        ],
+        penalty: [{ side: "left", text: "你連這些細節都注意到了？" },
+          { side: "right", text: "也許是因為與平常不同，才偶然留下了些印象。" }
+        ],
+        common: [{ side: "right", text: "您似乎對這件事特別在意。" },
+          { side: "left", text: "畢竟一條生命就這麼消逝了。" },
+          { side: "right", text: "生命…… 您認為所有人的生命，都具有相同的價值嗎？" },
+          { side: "left", text: "在長夜面前，所有人都應得到公平的審視。" },
+          { side: "right", text: " ……即使那個人曾經犯下罪行？" },
+          { side: "left", text: " 是的。" },
+        ],
+      },
+    },
+
+     //第八題
+    {    
+      dialogues: [
+        {
+           side: "right", 
+           text: " 神父，容我問您一個問題。"
+        },
+        { 
+          side: "left",
+          text: " 請說。" 
+        },
+        { 
+          side: "right",
+          text: " 如果有人犯下不可饒恕的罪行，卻因為金錢與權勢而逃過審判……。"
+        },
+        { 
+          side: "right",
+          text: " 您認為，長夜仍會寬恕他嗎？" 
+        },
+        { 
+          side: "left",
+          text: " 寬恕並不代表罪行不曾發生。"
+        },
+        { 
+          side: "right", 
+          text: " 多麼美妙的回答。"
+        },
+        { 
+          side: "right", 
+          text: " 那麼，如果是一位神職者呢？" 
+        },
+        { 
+          side: "right",
+          type: "thought",
+          text: "「幾年前的那件事……您真的已經忘記了嗎？」"
+        },
+        { 
+          side: "right", 
+          text: "如果一位神職者選擇＿＿＿＿，您認為長夜會原諒他嗎？"
+        },
+      ],
+      choices: ["保持緘默", "保持憐憫", "接受捐贈", "並未公正"],
+      choiceHints: ["在應該發聲時辜負信眾", "對一位曾犯下過錯的人", "接受捐贈，並替他保管「舊物」", "在審判中，聽信有聲望的人"],
+      safeChoiceIndex: 1,
+      feedback: {
+        safe: [{ side: "left", text: "沉默有時是慈悲，有時是逃避。" },
+          { side: "right", text: " 那麼，該如何分辨呢？" },
+          { side: "left", text: "或許只有當事人自己知道。" }
+        ],
+        penalty: [{ side: "left", text: "……你為何會想到這樣的事情？" },
+          { side: "right", text: " 只是些突發奇想的假設" },
+          { side: "left", text: "有些假設，未免太過具體。" },
+        ],
+        common: [{ side: "left", text: "為何突然問起這些？" },
+         { side: "right", text: "只是好奇長夜眼中的我們。" },
+         { side: "right", text: "畢竟神職者也是人，不是嗎？" },
+         { side: "left", text: "當然是的。" },
+         { side: "right", text: "既然如此，自然也可能犯錯。" },
+         { side: "left", text: "你似乎對某件事情耿耿於懷。" },
+         { side: "right", text: "或許吧。" },
+         { side: "right", text: "畢竟有些事情，是連時間也無法抹去傷痕的。" },
+        ],
+      },
+    },
+
+    //第九題
+    {
+      dialogues: [
+        { 
+          side: "left",
+          text: " 你似乎對法律抱有很深的不滿。" 
+        },
+        { 
+          side: "right",
+          text: " 不滿？"
+        },
+        { 
+          side: "right",
+          text: " 我只是認為，有些罪人實在太過幸運。" 
+        },
+        { 
+          side: "right",
+          text: " 他們犯下罪行，卻依然能過著安穩的生活。" 
+        },
+        { 
+          side: "left",
+           text: " 法律並不完美，但任何人都不應擅自取代審判。"
+        },
+        { 
+          side: "right", 
+          text: " 真是高尚的想法。"
+        },
+        { 
+          side: "left", 
+          text: " 那麼，你認為那些逃過制裁的人應該如何？" 
+        },
+        { 
+          side: "right",
+          type: "thought",
+          text: "「「那些傢伙……沒有一個是無辜的」」"
+        },
+        { side: "right", 
+          type: "thought",
+         text: "法律既然無法制裁他們，自然得由其他人動手」" },
+        { 
+          side: "right",
+         text: "我認為，他們應當＿＿＿＿。" },
+      ],
+      choices: ["受到同等的懲罰", "受知曉的人制裁", "重新接受調查", "由受害者決定"],
+      choiceHints: ["", "由知曉內情的人親自給予", "並未自己的行為承擔責任", "由受害者決定他們應當付的代價"],
+      safeChoiceIndex: 2,
+      feedback: {
+        safe: [{ side: "left", text: "所謂真相應當經過查證。" },
+          { side: "right", text: "我明白，任何人都可能被誤解。" }
+        ],
+        penalty: [{ side: "left", text: "你似乎認為，只要罪行成立，便可以不計手段地施加懲罰。" },
+          { side: "right", text: "我只是覺得，犯錯的人不應輕易逃脫。" }
+        ],
+        common: [{ side: "left", text: " 你究竟是來尋求寬恕，還是想向我證明什麼？" },
+          { side: "right", text: "您想得太多了。" },
+          { side: "right", text: "我不過是個普通的告解者。" }],
+      },
     },
   ];
 
@@ -1777,12 +2369,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showNextQuestionDialogue() {
-    const data = questionData[questionIndex];
-    const dialogue = data.dialogues[questionDialogueIndex];
+    const dialogues = questionPhase === "prompt"
+      ? questionData[questionIndex].dialogues
+      : questionFeedback;
+    const dialogue = dialogues[questionDialogueIndex];
     if (!dialogue) return;
 
     questionDialogueIndex++;
-    const isLastDialogue = questionDialogueIndex === data.dialogues.length;
+    const isLastDialogue = questionDialogueIndex === dialogues.length;
 
     const isRightSpeaking = dialogue.side === "right";
     if (questionNpcLeft) {
@@ -1799,6 +2393,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const bubble = document.createElement("div");
     bubble.className =
       "question-bubble " + (dialogue.side === "right" ? "right" : "left");
+    if (dialogue.type === "thought") {
+      bubble.classList.add("is-thought");
+    }
     const isFillIn = /[＿_]{2,}/.test(dialogue.text);
     let fillInText = null;
     if (isFillIn) {
@@ -1815,10 +2412,12 @@ document.addEventListener("DOMContentLoaded", () => {
     questionDialogues.scrollTop = questionDialogues.scrollHeight;
 
     if (isFillIn) {
+      questionTyping = true;
       typeQuestionFillIn(fillInText, dialogue.text, bubble, () => {
-        if (isLastDialogue) showQuestionChoices();
+        questionTyping = false;
+        if (questionPhase === "prompt" && isLastDialogue) showQuestionChoices();
       });
-    } else if (isLastDialogue) {
+    } else if (questionPhase === "prompt" && isLastDialogue) {
       showQuestionChoices();
     }
   }
@@ -1834,6 +2433,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // 取得目前題目的資料
     const data = questionData[questionIndex];
     questionDialogueIndex = 0;
+    questionPhase = "prompt";
+    questionFeedback = [];
+    questionTyping = false;
+    questionScene.classList.remove("is-answering");
 
     // 清空上一題的 NPC 對話
     questionDialogues.replaceChildren();
@@ -1845,6 +2448,10 @@ document.addEventListener("DOMContentLoaded", () => {
     questionButtons.forEach((button, index) => {
       // 更換按鈕文字
       button.querySelector(".question-choice-text").textContent = data.choices[index] || "";
+      const hint = data.choiceHints?.[index] || "";
+      const hintElement = button.querySelector(".question-choice-hint");
+      hintElement.textContent = hint;
+      hintElement.hidden = !hint.trim();
 
       // 沒有文字的選項不顯示
       button.hidden = !data.choices[index];
@@ -1862,7 +2469,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 從警告頁初始化並進入五題互動。
+  // 從警告頁初始化並進入題目互動。
   function enterQuestionScene() {
     // 如果找不到第七頁，停止執行
     if (!questionScene) return;
@@ -1882,6 +2489,7 @@ document.addEventListener("DOMContentLoaded", () => {
     warningScene.classList.remove("is-active");
 
     // 顯示第七頁
+    questionScene.classList.remove("is-complete");
     questionScene.classList.add("is-active", "is-entering");
     syncSceneGender(rhythmScene);
 
@@ -1893,9 +2501,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // 清空上一次的答案
     questionAnswers.length = 0;
     resetQuestionScore();
-
-    // 隱藏完成畫面
-    questionFinish.hidden = true;
 
     clearQuestionTimers();
     questionLocked = true;
@@ -1924,22 +2529,31 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 玩家作答、處理扣分與特殊環節分支。
+  function finishQuestionnaire() {
+    clearQuestionTimers();
+    questionLocked = true;
+    questionScene.classList.remove("is-answering");
+    questionScene.classList.add("is-complete");
+    questionChoicePanel.classList.remove("is-ready");
+    questionDialogues.replaceChildren();
+    window.dispatchEvent(
+      new CustomEvent("questionnaireCompleted", {
+        detail: {
+          remainingCandles: scoreboardFlames.length - extinguishedCandleCount,
+          gender: selectedGender === "female" ? "female" : "male",
+        },
+      }),
+    );
+    console.log("題目選擇紀錄：", questionAnswers);
+  }
+
   function continueQuestionnaire() {
-    if (questionIndex < questionData.length) {
+    if (extinguishedCandleCount >= scoreboardFlames.length) {
+      finishQuestionnaire();
+    } else if (questionIndex < questionData.length) {
       renderQuestion();
     } else {
-      questionChoicePanel.classList.remove("is-ready");
-      questionDialogues.replaceChildren();
-      questionFinish.hidden = false;
-      window.dispatchEvent(
-        new CustomEvent("questionnaireCompleted", {
-          detail: {
-            remainingCandles: scoreboardFlames.length - extinguishedCandleCount,
-            gender: selectedGender === "female" ? "female" : "male",
-          },
-        }),
-      );
-      console.log("五題選擇紀錄：", questionAnswers);
+      finishQuestionnaire();
     }
   }
 
@@ -1964,6 +2578,10 @@ document.addEventListener("DOMContentLoaded", () => {
     rhythmScene.classList.remove("is-active");
     if (event.detail && event.detail.success === false) {
       extinguishNextCandle();
+    }
+    if (extinguishedCandleCount >= scoreboardFlames.length) {
+      finishQuestionnaire();
+      return;
     }
     if (startExcuseBranchIfReady()) return;
     continueQuestionnaire();
@@ -1993,20 +2611,34 @@ document.addEventListener("DOMContentLoaded", () => {
     questionLocked = true;
     const soundDuration = playQuestionConfirmSound();
 
-    let startRhythmAfterAnswer = false;
-    let startExcuseAfterAnswer = false;
-    if (index === questionData[questionIndex].penaltyChoiceIndex) {
-      const nextExtinguishedCandleCount = extinguishedCandleCount + 1;
-      if (!hasTriggeredRhythmEvent && nextExtinguishedCandleCount === 2) {
-        hasTriggeredRhythmEvent = true;
-        startRhythmAfterAnswer = true;
-      } else if (
-        !hasTriggeredExcuseEvent &&
-        nextExtinguishedCandleCount === 5
-      ) {
-        startExcuseAfterAnswer = true;
+    const data = questionData[questionIndex];
+    const isPenaltyChoice = index !== data.safeChoiceIndex;
+    const fillInTexts = questionDialogues.querySelectorAll(
+      ".question-bubble.is-fill-in .question-bubble-text",
+    );
+    const fillInText = fillInTexts[fillInTexts.length - 1];
+    if (fillInText) {
+      const keyword = data.choiceKeywords
+        ? data.choiceKeywords[index]
+        : data.choices[index];
+      const text = fillInText.textContent;
+      const blank = /[＿_]{2,}/.exec(text);
+      if (blank) {
+        const keywordElement = document.createElement("span");
+        keywordElement.textContent = keyword;
+        if (isPenaltyChoice) keywordElement.classList.add("is-incorrect");
+        fillInText.replaceChildren(
+          text.slice(0, blank.index),
+          keywordElement,
+          text.slice(blank.index + blank[0].length),
+        );
       }
+      questionDialogues.scrollTop = questionDialogues.scrollHeight;
     }
+    questionFeedback = [
+      ...(isPenaltyChoice ? data.feedback.penalty : data.feedback.safe),
+      ...data.feedback.common,
+    ];
 
     // 儲存玩家選擇的答案
     questionAnswers.push(index);
@@ -2018,79 +2650,69 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 被選擇的按鈕變色
     questionButtons[index].classList.add("is-selected");
+    questionScene.classList.add("is-answering");
 
-    const advanceAfterFeedback = () => {
+    const closeChoices = () => {
       questionButtons[index].classList.remove("is-selected");
-      questionIndex++;
-
-      if (startRhythmAfterAnswer) {
-        syncSceneGender(rhythmScene);
-        rhythmIntroScene.classList.add("is-active");
-        window.dispatchEvent(new Event("startRhythmIntroDialogue"));
+      if (extinguishedCandleCount >= scoreboardFlames.length) {
+        finishQuestionnaire();
         return;
       }
-
-      if (startExcuseAfterAnswer) {
-        startExcuseBranchIfReady();
-        return;
-      }
-
-      continueQuestionnaire();
+      questionChoicePanel.classList.remove("is-ready");
+      questionTimers.push(setTimeout(() => {
+        questionPhase = "feedback";
+        questionDialogueIndex = 0;
+        questionScene.classList.remove("is-answering");
+        questionLocked = false;
+      }, 350));
     };
 
-    const isPenaltyChoice =
-      index === questionData[questionIndex].penaltyChoiceIndex;
     if (isPenaltyChoice) {
       questionTimers.push(
         setTimeout(() => {
           extinguishNextCandle();
           gameSfx.play("candle-out");
           questionTimers.push(
-            setTimeout(advanceAfterFeedback, QUESTION_CANDLE_EXTINGUISH_MS),
+            setTimeout(closeChoices, QUESTION_CANDLE_EXTINGUISH_MS),
           );
         }, soundDuration),
       );
     } else {
-      questionTimers.push(setTimeout(advanceAfterFeedback, 450));
+      questionTimers.push(setTimeout(closeChoices, 450));
     }
   }
 
-  // 題目、對話推進與重玩的事件綁定。
+  // 題目與對話推進的事件綁定。
   questionButtons.forEach((button, index) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
       chooseQuestion(index);
     });
   });
 
   questionStage.addEventListener("click", () => {
-    if (!questionScene.classList.contains("is-active") || questionLocked) {
+    if (!questionScene.classList.contains("is-active") || questionLocked || questionTyping) {
       return;
     }
 
-    const data = questionData[questionIndex];
-    if (data && questionDialogueIndex < data.dialogues.length) {
+    const dialogues = questionPhase === "prompt"
+      ? questionData[questionIndex].dialogues
+      : questionFeedback;
+    if (questionDialogueIndex < dialogues.length) {
       showNextQuestionDialogue();
+    } else if (questionPhase === "feedback") {
+      questionLocked = true;
+      questionIndex++;
+      if (!hasTriggeredRhythmEvent && extinguishedCandleCount === 2) {
+        hasTriggeredRhythmEvent = true;
+        syncSceneGender(rhythmScene);
+        rhythmIntroScene.classList.add("is-active");
+        window.dispatchEvent(new Event("startRhythmIntroDialogue"));
+      } else if (!startExcuseBranchIfReady()) {
+        continueQuestionnaire();
+      }
     }
   });
-
-  if (questionRestartBtn) {
-    questionRestartBtn.addEventListener("click", () => {
-      // 回到第一題
-      questionIndex = 0;
-
-      // 清除之前的答案
-      questionAnswers.length = 0;
-      resetQuestionScore();
-      hasTriggeredRhythmEvent = false;
-      hasTriggeredExcuseEvent = false;
-
-      // 隱藏完成畫面
-      questionFinish.hidden = true;
-
-      // 重新顯示第一題
-      renderQuestion();
-    });
-  }
 
 });
 
@@ -2226,82 +2848,7 @@ document.addEventListener("DOMContentLoaded", () => {
     osc.stop(now + duration);
   }
 
-  // =========================================
-  // 打字機效果控制器
-  // =========================================
-  const typewriter = (() => {
-    let timerId = null;
-    let isTyping = false;
-    let fullText = "";
-    let targetEl = null;
-    let onDoneCallback = null;
-
-    function stop() {
-      if (timerId !== null) {
-        clearTimeout(timerId);
-        timerId = null;
-      }
-      isTyping = false;
-      if (targetEl) {
-        targetEl.classList.remove("is-typing");
-      }
-    }
-
-    function finishImmediately() {
-      if (!isTyping) return false;
-      stop();
-      if (targetEl) {
-        targetEl.textContent = fullText;
-      }
-      const cb = onDoneCallback;
-      onDoneCallback = null;
-      if (typeof cb === "function") cb();
-      return true;
-    }
-
-    function start(el, text, speed = 46, onDone = null, withSound = true) {
-      stop();
-      if (!el) return;
-      targetEl = el;
-      fullText = text;
-      onDoneCallback = onDone;
-      isTyping = true;
-      el.textContent = "";
-      el.classList.add("is-typing");
-
-      const chars = Array.from(text);
-      let idx = 0;
-
-      function step() {
-        if (!isTyping) return;
-        if (idx >= chars.length) {
-          stop();
-          const cb = onDoneCallback;
-          onDoneCallback = null;
-          if (typeof cb === "function") cb();
-          return;
-        }
-
-        const ch = chars[idx++];
-        el.textContent += ch;
-        if (withSound) playTypingSound(ch, idx);
-
-        const pauseExtra = "，。！？…、".includes(ch) ? 130 : 0;
-        timerId = setTimeout(step, speed + pauseExtra);
-      }
-
-      step();
-    }
-
-    return {
-      start,
-      finishImmediately,
-      stop,
-      get active() {
-        return isTyping;
-      },
-    };
-  })();
+  const typewriter = createTypewriter(46, 130);
 
   // =========================================
   // 遊戲數值與流程圖分支設定
@@ -2316,13 +2863,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let phase = "inactive";
 
   const introScript = [
-    "和您的對話令我感到懷疑。",
-    "你的呼吸越來越急促……在主面前，你隱瞞了什麼？",
-    "別試圖用言語掩飾了——讓我聽聽你真實的心跳聲吧。",
+    "看來你對告解確實十分生疏。",
+    "不必緊張，長夜會聆聽每一位告解者。",
   ];
   const rhythmIntroDialogueScript = [
-    "為何您呼吸急促，似乎緊張了？",
-    "您的反應令我感到懷疑",
+    "稍等。",
+    "你的呼吸似乎有些急促。",
   ];
   const excuseIntroDialogueScript = rhythmIntroDialogueScript;
   let rhythmIntroDialogueIndex = 0;
@@ -2332,7 +2878,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const waves = [
     {
       label: "第 1 階段心律",
-      dialogue: "「和您的對話令我感到懷疑。」",
+      dialogue: "「你的呼吸似乎比剛才急促了些。」",
       zoneStart: 48,
       zoneWidth: 11,
       duration: 1750,
@@ -2343,7 +2889,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     {
       label: "第 2 階段心律",
-      dialogue: "「……你的眼神為什麼在閃躲？」",
+      dialogue: "「……你的眼神為甚麼在閃躲？」",
       zoneStart: 60,
       zoneWidth: 10,
       duration: 1950,
@@ -2357,7 +2903,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     {
       label: "第 3 階段心律",
-      dialogue: "「別想編造謊言，你的脈搏正在發抖！」",
+      dialogue: "「別急著回答，平復你可疑的心跳，別讓它成為誤判的證據。」",
       zoneStart: 42,
       zoneWidth: 9,
       duration: 2050,
@@ -2371,7 +2917,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     {
       label: "第 4 階段心律",
-      dialogue: "「案發當晚，你真的待在教堂裡嗎？」",
+      dialogue: "「在長夜面前，你真的沒有隱瞞任何事情嗎？」",
       zoneStart: 66,
       zoneWidth: 8,
       duration: 1480,
@@ -2383,46 +2929,10 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   ];
 
-  // =========================================
-  // 蠟燭動態控制（由右至左依序熄滅並飄煙）
-  // =========================================
-  let candleTimers = [];
-
-  function clearCandleTimers() {
-    candleTimers.forEach((id) => clearTimeout(id));
-    candleTimers = [];
-  }
-
-  function resetCandles() {
-    clearCandleTimers();
-    if (!rhythmCandlesWrap) return;
-    rhythmCandlesWrap.querySelectorAll(".candle-flame-slot").forEach((slot) => {
-      slot.classList.remove("is-extinguished");
-    });
-  }
-
-  function extinguishCandlesFromRight(count, immediate = false) {
-    clearCandleTimers();
-    if (!rhythmCandlesWrap) return;
-    const clampedCount = Math.min(TOTAL_CANDLES, Math.max(0, count));
-    for (let i = 0; i < clampedCount; i += 1) {
-      const targetIndex = TOTAL_CANDLES - 1 - i;
-      const slot = rhythmCandlesWrap.querySelector(
-        `.candle-flame-slot[data-candle-index="${targetIndex}"]`,
-      );
-      if (slot && !slot.classList.contains("is-extinguished")) {
-        if (immediate) {
-          slot.classList.add("is-extinguished");
-          continue;
-        }
-        const timerId = setTimeout(() => {
-          slot.classList.add("is-extinguished");
-          gameSfx.play("candle-out");
-        }, i * 220);
-        candleTimers.push(timerId);
-      }
-    }
-  }
+  const {
+    reset: resetCandles,
+    extinguish: extinguishCandlesFromRight,
+  } = createCandleController(rhythmCandlesWrap, TOTAL_CANDLES, 220);
 
   // =========================================
   // 判定回饋特效（通過或失誤）
@@ -2804,13 +3314,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (rhythmInstructionText) {
           typewriter.start(
             rhythmInstructionText,
-            "完美通過，成功瞞過神父。",
+            "瞞過神父。",
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "按空白鍵繼續告解";
+                rhythmActionBtn.textContent = "點擊繼續";
                 rhythmActionBtn.dataset.outcome = "success";
-                rhythmActionBtn.disabled = true;
+                rhythmActionBtn.disabled = false;
                 rhythmActionBtn.hidden = false;
               }
             },
@@ -2842,7 +3352,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         typewriter.start(
           rhythmDialogueText,
-          "「如果真的無辜，為何如此緊張？」",
+          "「你的心跳還是沒有平復，既然問心無愧，又為何如此不安？」",
           44,
         );
         if (rhythmInstructionText) {
@@ -2949,18 +3459,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!rhythmScene || !rhythmScene.classList.contains("is-active")) return;
     if (e.code !== "Space" || e.repeat) return;
 
-    e.preventDefault();
     if (phase === "intro-dialogue") {
+      e.preventDefault();
       advanceIntroDialogue();
     } else if (phase === "rhythm") {
+      e.preventDefault();
       rhythmController.triggerHit();
-    } else if (
-      phase === "outro-dialogue" &&
-      rhythmActionBtn &&
-      !rhythmActionBtn.hidden &&
-      rhythmActionBtn.dataset.outcome === "success"
-    ) {
-      completeRhythmBranch();
     }
   });
 
@@ -2968,7 +3472,8 @@ document.addEventListener("DOMContentLoaded", () => {
     rhythmActionBtn.addEventListener("click", () => {
       if (
         phase !== "outro-dialogue" ||
-        rhythmActionBtn.dataset.outcome !== "failure"
+        rhythmActionBtn.hidden ||
+        rhythmActionBtn.disabled
       ) {
         return;
       }
@@ -3103,86 +3608,7 @@ document.addEventListener("DOMContentLoaded", () => {
     osc.stop(now + duration);
   }
 
-  // =========================================
-  // 打字機效果控制器
-  // =========================================
-  const typewriter = (() => {
-    let timerId = null;
-    let isTyping = false;
-    let fullText = "";
-    let targetEl = null;
-    let onDoneCallback = null;
-    let onUpdateCallback = null;
-
-    function stop() {
-      if (timerId !== null) {
-        clearTimeout(timerId);
-        timerId = null;
-      }
-      isTyping = false;
-      if (targetEl) {
-        targetEl.classList.remove("is-typing");
-      }
-    }
-
-    function finishImmediately() {
-      if (!isTyping) return false;
-      stop();
-      if (targetEl) {
-        targetEl.textContent = fullText;
-        if (onUpdateCallback) onUpdateCallback();
-      }
-      const cb = onDoneCallback;
-      onDoneCallback = null;
-      if (typeof cb === "function") cb();
-      return true;
-    }
-
-    function start(el, text, speed = 42, onDone = null, withSound = true, onUpdate = null) {
-      stop();
-      if (!el) return;
-      targetEl = el;
-      fullText = text;
-      onDoneCallback = onDone;
-      onUpdateCallback = onUpdate;
-      isTyping = true;
-      el.textContent = "";
-      el.classList.add("is-typing");
-
-      const chars = Array.from(text);
-      let idx = 0;
-
-      function step() {
-        if (!isTyping) return;
-        if (idx >= chars.length) {
-          stop();
-          const cb = onDoneCallback;
-          onDoneCallback = null;
-          if (typeof cb === "function") cb();
-          return;
-        }
-
-        const ch = chars[idx++];
-        el.textContent += ch;
-        if (onUpdateCallback) onUpdateCallback();
-        if (withSound) playTypingSound(ch, idx);
-
-        const pauseExtra = "，。！？…、".includes(ch) ? 115 : 0;
-        timerId = setTimeout(step, speed + pauseExtra);
-      }
-
-      step();
-    }
-
-    return {
-      start,
-      finishImmediately,
-      stop,
-      get active() {
-        return isTyping;
-      },
-    };
-  })();
+  const typewriter = createTypewriter(42, 115);
 
   // 狡辯計時與本環節的燭火顯示。
   const TOTAL_CANDLES = 7;
@@ -3215,29 +3641,28 @@ document.addEventListener("DOMContentLoaded", () => {
    ========================================= */
 
 const commonDialoguesRounds = [
-  { side: "left", text: "我親愛的教徒。" },
-  { side: "left", text: "在開始之前，我還有些問題想問您。" },
-  { side: "center", text: "當然，神父。" },
-  { side: "center", text: "只要是我知道的，必定知無不言。" },
+  { side: "left", text: "我親愛的教徒，我還有些疑問。" },
+  { side: "center", text: "當然，神父，我將知無不言。" }
 ];
   const originalRounds = [
     {
       word: "killer",
       dialogues: [
-        { side: "left", text: "我親愛的教徒。" },
-        { side: "left", text: "您確定對我沒有任何隱瞞？" },
-        { side: "center", text: "當然，我的神父。" },
-        { side: "center", text: "我怎麼能對您說謊？" },
-        { side: "center", text: "殺手怎麼可能是我呢？" },
-        { side: "center", text: "請您不要聽信那些胡言亂語。" },
+        { side: "left", text: "你似乎對鎮上的命案十分感興趣。" },
+        { side: "left", text: "又比一般人更加在意死者的過去。" },
+        { side: "center", text: "神父，這座鎮上有誰不在談論命案呢？" },
+        { side: "center", text: "難道關心這些事情，也是一種罪過？" },
+        { side: "left", text: "長夜會希望你沒有隱瞞。" },
       ],
     },
     {
       word: "weapon",
       dialogues: [
-        {side: "left",text: "那麼，現場遺留的兇器又該作何解釋？"},
-        {side: "center",text: "那不過是祈禱儀式用的器具罷了。"},
-        {side: "center",text: "請不要聽信那些胡言亂語。",},
+        {side: "left",text: "你先前提起的那筆交易，似乎有些可疑。"},
+        { side: "left", text: "尤其是你對某些物品的用途，描述得過於詳細。" },
+        {side: "center",text: "神父，難道買賣日用品也需要接受審問嗎？"},
+        {side: "center",text: "我可不認為自己做了什麼違法的事情。",},
+        {side: "left",text: "但願如此。"},
       ],
     },
   ];
@@ -3245,24 +3670,21 @@ const commonDialoguesRounds = [
     {
       word: "corpse",
       dialogues: [
-        { side: "left", text: "那麼地窖裡的氣味該怎麼解釋？" },
-        { side: "left", text: "有人看見你深夜獨自進出。" },
-        { side: "left", text: "那具屍體究竟是怎麼回事？" },
-        { side: "center", text: "神父，您誤會了！" },
-        { side: "center", text: "我只是去整理陳年的酒桶。" },
-        { side: "center", text: "根本沒有您說的任何屍體。" },
-        { side: "left", text: "在主面前，謊言無所遁形。" },
-        {
-          side: "center",
-          text: "請相信我，那只是腐壞的木屑味！",
-        },
+        { side: "left", text: "湯姆的死，似乎與你昨夜的行蹤有些關聯。" },
+        { side: "left", text: "你能解釋這些巧合嗎？" },
+        { side: "center", text: "我甚至並不清楚案發細節，又該怎麼確認我的行蹤與其有關？" },
+        { side: "center", text: "難道您已經認定我是兇手？" },
+        { side: "left", text: "希望你真心想得到長夜的寬恕。" },
       ],
     },
     {
       word: "enigma",
       dialogues: [
-        {side: "left",text: "你的說辭處處充滿矛盾的謎團。",},
-        {side: "center",text: "一切都只是巧合，我對主發誓！",},
+        {side: "left",text: " 你似乎不只是來告解的。",},
+        {side: "left",text: " 你究竟想從我這裡知道什麼？",},
+        {side: "center",text: "神父，您想得太多了。",},
+        {side: "center",text: "我只是對長夜的教誨有些疑問。",},
+        {side: "left",text: " 那麼，希望你尋到答案。",},
       ],
     },
   ];
@@ -3286,42 +3708,10 @@ const commonDialoguesRounds = [
     transitionTimers = [];
   }
 
-  // =========================================
-  // 蠟燭動態控制（由右至左依序熄滅並飄煙）
-  // =========================================
-  let candleTimers = [];
-
-  function clearCandleTimers() {
-    candleTimers.forEach((id) => clearTimeout(id));
-    candleTimers = [];
-  }
-
-  function resetCandles() {
-    clearCandleTimers();
-    if (!excuseCandlesWrap) return;
-    excuseCandlesWrap.querySelectorAll(".candle-flame-slot").forEach((slot) => {
-      slot.classList.remove("is-extinguished");
-    });
-  }
-
-  function extinguishCandlesFromRight(count) {
-    clearCandleTimers();
-    if (!excuseCandlesWrap) return;
-    const clamped = Math.min(TOTAL_CANDLES, Math.max(0, count));
-    for (let i = 0; i < clamped; i += 1) {
-      const targetIndex = TOTAL_CANDLES - 1 - i;
-      const slot = excuseCandlesWrap.querySelector(
-        `.candle-flame-slot[data-candle-index="${targetIndex}"]`,
-      );
-      if (slot && !slot.classList.contains("is-extinguished")) {
-        const timerId = setTimeout(() => {
-          slot.classList.add("is-extinguished");
-          gameSfx.play("candle-out");
-        }, i * 180);
-        candleTimers.push(timerId);
-      }
-    }
-  }
+  const {
+    reset: resetCandles,
+    extinguish: extinguishCandlesFromRight,
+  } = createCandleController(excuseCandlesWrap, TOTAL_CANDLES, 180);
 
   function updateTimerUI() {
     const clamped = Math.max(0, remainingTime);
@@ -3599,11 +3989,11 @@ const commonDialoguesRounds = [
 
       appendSpeechBubble({
         side: "left",
-        text: "……願你的言辭在主面前毫無虛假。",
+        text: "願你的言辭在長夜面前毫無虛假。",
       });
 
       if (typingStatusBadge) {
-        typingStatusBadge.textContent = "狡辯成功：不扣分。";
+        typingStatusBadge.textContent = "狡辯成功。";
       }
       if (excuseActionBtn) {
         excuseActionBtn.textContent = "繼續告解";
@@ -3613,7 +4003,7 @@ const commonDialoguesRounds = [
     } else {
       playTone(96, 0.45, "sawtooth", 0.2, 0.5);
       extinguishCandlesFromRight(FAIL_EXTINGUISH_COUNT);
-      showFeedbackBanner("狡辯失敗，扣一分", false);
+      showFeedbackBanner("狡辯失敗", false);
 
       if (excuseScene) {
         excuseScene.classList.add("is-miss-flash");
@@ -3624,11 +4014,16 @@ const commonDialoguesRounds = [
 
       appendSpeechBubble({
         side: "left",
-        text: "支吾其詞、破綻百出……你根本無法為自己辯解！",
-      });
+        text: "你的解釋無法消除我的疑慮。",
+      },
+      {
+        side: "left",
+        text: "我會記住今日你所說的一切。",
+      }
+    );
 
       if (typingStatusBadge) {
-        typingStatusBadge.textContent = "狡辯失敗：扣一分。";
+        typingStatusBadge.textContent = "狡辯失敗。";
       }
       if (excuseActionBtn) {
         excuseActionBtn.textContent = "繼續告解";
@@ -3894,7 +4289,7 @@ const commonDialoguesRounds = [
     endingScene.querySelector('.concealed-reveal').src = `./images/${characterFolder}/PC_left.PNG`;
     endingScene.querySelector('.concealed-prayer').src = `./images/${characterFolder}/PC_right.PNG`;
     if (active !== null) controllers.get(active).reset();
-    active = remaining <= 1 ? 'prison' : remaining < 7 ? 'escape' : 'concealed';
+    active = remaining === 0 ? 'prison' : remaining < 7 ? 'escape' : 'concealed';
     for (const scene of scenes) scene.hidden = scene.dataset.ending !== active;
     endingScene.classList.add('is-active');
     controllers.get(active).start();

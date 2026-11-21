@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>告解室</title>
-    <link rel="icon" type="image/png" href="./images/Candle.png?v=7" />
+    <link rel="icon" type="image/png" href="./images/bg/Candle.png" />
     <link rel="stylesheet" href="css/style.css" />
 </head>
 
@@ -169,8 +169,8 @@
             <!-- 左側男角（Hover 後點擊切換至下一頁） -->
             <figure class="char-item char-boy" id="pcBoy" role="button" tabindex="0" aria-label="選擇男角色">
                 <span class="char-backlight" aria-hidden="true"></span>
-                <img class="char-visual img-default" src="./images/PC_boy.png" alt="男角色" />
-                <img class="char-visual img-hover" src="./images/IMG_8937 2.png" alt="男角色替換圖" />
+                <img class="char-visual img-default" src="./images/PC_B/PC_boy.png" alt="男角色" />
+                <img class="char-visual img-hover" src="./images/PC_B/PC_boy_1.png" alt="男角色替換圖" />
                 <span class="candle-flame-glow boy-flame-1" aria-hidden="true"></span>
                 <span class="candle-flame-glow boy-flame-2" aria-hidden="true"></span>
                 <span class="candle-flame-glow boy-flame-3" aria-hidden="true"></span>
@@ -179,8 +179,8 @@
             <!-- 右側女角（Hover 後點擊切換至下一頁） -->
             <figure class="char-item char-girl" id="pcGirl" role="button" tabindex="0" aria-label="選擇女角色">
                 <span class="char-backlight" aria-hidden="true"></span>
-                <img class="char-visual img-default" src="./images/PC_girl.png" alt="女角色" />
-                <img class="char-visual img-hover" src="./images/IMG_8938 2.png" alt="女角色替換圖" />
+                <img class="char-visual img-default" src="./images/PC_G/PC_girl.png" alt="女角色" />
+                <img class="char-visual img-hover" src="./images/PC_G/PC_girl_1.png" alt="女角色替換圖" />
                 <span class="candle-flame-glow girl-flame-1" aria-hidden="true"></span>
                 <span class="candle-flame-glow girl-flame-2" aria-hidden="true"></span>
                 <span class="candle-flame-glow girl-flame-3" aria-hidden="true"></span>
@@ -230,14 +230,50 @@
             <span class="side-flame-glow right-flame-3"></span>
         </div>
 
-        <!-- 中央「開始告解」互動按鈕（點擊後切換至第四頁） -->
+        <!-- 中央「開始告解」互動按鈕 -->
         <button type="button" class="confession-title-btn" id="startConfessionBtn" aria-label="開始告解">
-            <img class="confession-title-img" id="confessionTitleImg" src="./images/start.png"
+            <img class="confession-title-img" id="confessionTitleImg" src="./images/bg/start.png"
                 alt="開始告解" />
         </button>
     </section>
 
-    <!-- 第四頁：前情提要（打字機效果）與 Parallax.js 筆記線索頁面 -->
+    <!-- 第四頁-1：故事背景 -->
+    <section class="story-intro-scene" id="storyIntroScene" aria-label="故事背景">
+        <div class="candlfire-layer" aria-hidden="true">
+            <img class="candlfire-img" src="./images/img_candlfire_4.0.png" alt="" />
+            <span class="side-flame-glow left-flame-1"></span>
+            <span class="side-flame-glow left-flame-2"></span>
+            <span class="side-flame-glow left-flame-3"></span>
+            <span class="side-flame-glow right-flame-1"></span>
+            <span class="side-flame-glow right-flame-2"></span>
+            <span class="side-flame-glow right-flame-3"></span>
+        </div>
+        <div class="story-intro-content" id="storyIntroContent" tabindex="0" aria-label="故事內容，可上下捲動，按 Enter 繼續">
+            <p class="story-intro-text" id="storyIntroText">
+                「霧鐘鎮連環凶殺案」<br />
+                霧鐘鎮上有一座以特殊信仰聞名的教會，供奉著神明「長夜」<br />
+                <br />
+                近來，鎮上接連發生數起命案<br />
+                死者看似毫無關聯，卻都曾因權勢、金錢或證據不足而逃過法律制裁<br />
+                而你，正是這一連串命案的兇手<br />
+                但你自認並未濫殺無辜，只是在替法律完成未竟的審判<br />
+                <br />
+                上一位被審判者是 <span class="highlight-text">酒保湯姆</span><br />
+                他曾替權貴掩蓋罪行，並利用他人的秘密謀取利益<br />
+                昨日，你在<span class="highlight-text">地下酒窖</span>將其<span class="highlight-text">審判</span><br />
+                <br />
+                如今，你將目光轉向下一位目標——<span class="highlight-text">教會的神父</span><br />
+                數年前，他曾在一樁涉及權貴的命案中隱瞞重要證詞、偏信權貴<br />
+                使真正的犯人逍遙法外<br />
+                <br />
+                為了確認他的罪行，你踏入告解室，在交談中尋找審判他的機會<br />
+                <br />
+                <span class="story-intro-final">你不是來尋求寬恕的，而是來給予審判的</span></p>
+        </div>
+        <p class="story-intro-hint">點擊畫面繼續</p>
+    </section>
+
+    <!-- 第四頁-2：前情提要（打字機效果）與 Parallax.js 筆記線索頁面 -->
     <section class="confession-room-scene" id="confessionRoomScene" aria-label="前情提要">
         <!-- Parallax.js 滑鼠互動視差容器 -->
         <div class="memo-parallax-scene" id="memoParallaxScene" aria-hidden="true">
@@ -249,7 +285,7 @@
             <!-- 中景主層（data-depth="0.38"）：筆記本隨滑鼠位移 -->
             <div class="parallax-layer" data-depth="0.38">
                 <div class="memo-overscan">
-                    <img class="memo-img is-jpg-fallback" id="memoImg" src="./images/Group 3.svg" alt="關鍵詞筆記" />
+                    <img class="memo-img is-jpg-fallback" id="memoImg" src="./images/bg/paper.png" alt="關鍵詞筆記" />
                 </div>
             </div>
 
@@ -267,15 +303,18 @@
         <!-- 右側劇情說明（逐字打字機進場）與 next 按鈕 -->
         <div class="briefing-panel" id="briefingPanel">
             <p class="briefing-story" id="briefingStory">
-                你是連環殺人案的犯人<br />
-                你剛犯下一起新的凶殺案<br />
-                這座警力低下的鎮子讓你實在提不起興趣<br />
-                但最近 你發現<br />
-                鎮上的神父似乎對你產生了疑心<br />
-                於是 你終於找到新的樂子
+                不久前，你在酒窖完成一場「審判」<br />
+                但在這座法律形同虛設的城鎮<br />
+                還有太多罪人逍遙法外<br />
+                而你的下一個目標<br />
+                正是那位侍奉「長夜」的神父<br />
+                為了確認他曾經犯下的罪行<br />
+                你決定以告解者的身分接近他<br />
+                在這場談話中，你必須謹慎回答<br />
+                
             </p>
 
-            <p class="briefing-goal" id="briefingGoal">目標:隱藏自己的身分</p>
+            <p class="briefing-goal" id="briefingGoal">目標:隱藏自己的身分，並尋找適當的時機</p>
             <p class="briefing-reminder" id="briefingReminder">
                 請記得紙上的犯案過程
             </p>
@@ -561,7 +600,7 @@
         <!-- 星火飛舞動態畫布 -->
         <canvas class="warning-sparks-canvas" id="warningSparksCanvas" aria-hidden="true"></canvas>
 
-        <!-- 中央洋紅框漸層警告視窗 -->
+        <!-- 中央洋紅框霧面警告視窗 -->
         <div class="warning-card-frame" role="dialog" aria-labelledby="warningMessageText">
             <div class="warning-card-inner">
                 <p class="warning-message" id="warningMessageText">
@@ -573,7 +612,7 @@
             </div>
         </div>
     </section>
-<!-- 第七頁：五題互動系統  -->
+<!-- 第七頁：九題互動系統  -->
 <section class="question-scene" id="questionScene" aria-label="告解互動題目">
     <div class="question-stage">
         <div class="question-embers" id="questionEmbers" aria-hidden="true"></div>
@@ -600,6 +639,7 @@
                     <path class="question-choice-border-decoration" d="M4 32.5 L19 23 L34 32.5 L19 42 Z M416 32.5 L401 23 L386 32.5 L401 42 Z" />
                 </svg>
                 <span class="question-choice-text"></span>
+                <span class="question-choice-hint" hidden></span>
             </button>
             <button type="button" class="question-choice">
                 <svg class="question-choice-border" viewBox="0 0 420 65" preserveAspectRatio="none" aria-hidden="true">
@@ -608,6 +648,7 @@
                     <path class="question-choice-border-decoration" d="M4 32.5 L19 23 L34 32.5 L19 42 Z M416 32.5 L401 23 L386 32.5 L401 42 Z" />
                 </svg>
                 <span class="question-choice-text"></span>
+                <span class="question-choice-hint" hidden></span>
             </button>
             <button type="button" class="question-choice">
                 <svg class="question-choice-border" viewBox="0 0 420 65" preserveAspectRatio="none" aria-hidden="true">
@@ -616,6 +657,7 @@
                     <path class="question-choice-border-decoration" d="M4 32.5 L19 23 L34 32.5 L19 42 Z M416 32.5 L401 23 L386 32.5 L401 42 Z" />
                 </svg>
                 <span class="question-choice-text"></span>
+                <span class="question-choice-hint" hidden></span>
             </button>
             <button type="button" class="question-choice">
                 <svg class="question-choice-border" viewBox="0 0 420 65" preserveAspectRatio="none" aria-hidden="true">
@@ -624,12 +666,8 @@
                     <path class="question-choice-border-decoration" d="M4 32.5 L19 23 L34 32.5 L19 42 Z M416 32.5 L401 23 L386 32.5 L401 42 Z" />
                 </svg>
                 <span class="question-choice-text"></span>
+                <span class="question-choice-hint" hidden></span>
             </button>
-        </div>
-        <!-- 五題完成後的提示，以及重新開始題目的按鈕。 -->
-        <div class="question-finish" id="questionFinish" hidden>
-            <p>五題已完成</p>
-            <button type="button" id="questionRestartBtn">重新開始題目</button>
         </div>
         <p class="question-continue-hint">✧　點擊神父，聆聽下一段告解　✧</p>
     </div>
@@ -925,7 +963,7 @@
                 <circle cx="14" cy="7" r="3"/>
                 <circle cx="10" cy="17" r="3"/>
             </svg>
-            <span>音量設定</span>
+            <span>音量</span>
         </button>
         <section class="audio-settings-panel" id="audioSettingsPanel"
             role="dialog" aria-modal="false" aria-label="聲音設定" hidden>
@@ -966,7 +1004,7 @@
 <div id="candleCursor" class="candle-cursor" aria-hidden="true">
     <div class="candle-cursor-glow"></div>
     <div class="candle-cursor-sparks"></div>
-    <img src="./images/mouse.PNG" alt="燭台鼠標">
+    <img src="./images/bg/mouse.PNG" alt="燭台鼠標">
 </div>
 
 <!-- 繪製滑鼠移動時的半秒光線軌跡 -->

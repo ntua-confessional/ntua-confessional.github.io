@@ -234,7 +234,8 @@ body {
     z-index: 1;
 }
 
-.character-scene::before {
+.character-scene::before,
+.story-intro-scene::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -602,7 +603,8 @@ body {
         transform 1.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.confession-start-scene.is-active .candlfire-layer {
+.confession-start-scene.is-active .candlfire-layer,
+.story-intro-scene.is-active .candlfire-layer {
     opacity: 1;
     transform: scale(1);
 }
@@ -630,7 +632,8 @@ body {
     pointer-events: none;
 }
 
-.confession-start-scene.is-active .side-flame-glow {
+.confession-start-scene.is-active .side-flame-glow,
+.story-intro-scene.is-active .side-flame-glow {
     animation: charCandleFlicker 2.4s ease-in-out infinite alternate;
 }
 
@@ -684,6 +687,28 @@ body {
     animation-delay: 1s;
 }
 
+.confession-start-scene .candlfire-layer {
+    inset: 0 auto auto 50%;
+    width: max(100%, 177.777778vh);
+    height: max(100%, 56.25vw);
+    transform: translateX(-50%) scale(1.02);
+}
+
+.confession-start-scene.is-active .candlfire-layer {
+    transform: translateX(-50%) scale(1);
+}
+
+.confession-start-scene .side-flame-glow {
+    width: 4.5%;
+}
+
+.confession-start-scene .left-flame-1 { left: 5.27%; top: 5.13%; }
+.confession-start-scene .left-flame-2 { left: 18.78%; top: 4.87%; width: 5.5%; }
+.confession-start-scene .left-flame-3 { left: 20.40%; top: 27.09%; }
+.confession-start-scene .right-flame-1 { left: 79.77%; top: 9.97%; width: 5.5%; }
+.confession-start-scene .right-flame-2 { left: 79.80%; top: 33.14%; }
+.confession-start-scene .right-flame-3 { left: 93.81%; top: 9.81%; }
+
 /* 中央「開始告解」互動按鈕 */
 .confession-title-btn {
     position: relative;
@@ -727,8 +752,98 @@ body {
     filter: brightness(1.24) drop-shadow(0 0 26px rgba(255, 206, 148, 0.68));
 }
 
+/* 第四頁-1：故事背景 */
+.story-intro-scene {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px calc(max(32px, env(safe-area-inset-bottom)) + 40px);
+    background: #24235b;
+    color: #f4f5fc;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 1s ease;
+}
+
+.story-intro-scene::before {
+    z-index: 2;
+}
+
+.story-intro-scene .candlfire-img {
+    object-fit: fill;
+}
+
+.story-intro-scene.is-active .candlfire-layer {
+    opacity: .3;
+}
+
+.story-intro-scene.is-active {
+    z-index: 5;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.story-intro-content {
+    position: relative;
+    z-index: 3;
+    width: min(100%, 1000px);
+    max-height: 100%;
+    overflow-y: auto;
+    text-align: center;
+    scrollbar-width: none;
+}
+
+.story-intro-content::-webkit-scrollbar {
+    display: none;
+}
+
+.story-intro-text {
+    margin: 0;
+    font-size: clamp(16px, 1.4vw, 21px);
+    line-height: 1.7;
+    letter-spacing: .06em;
+    white-space: pre-line;
+}
+.highlight-text {
+    color: #efba79;
+}
+.story-intro-final {
+    color: #ff5c5c;
+    font-size: 1.35em;
+    font-weight: 700;
+}
+
+.story-intro-char {
+    display: inline-block;
+    opacity: 0;
+    animation: inkAppear .5s ease forwards;
+}
+
+@keyframes inkAppear {
+    from { opacity: 0; filter: blur(5px); transform: translateY(4px); }
+    to { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+.story-intro-hint {
+    position: absolute;
+    z-index: 3;
+    bottom: max(32px, env(safe-area-inset-bottom));
+    margin: 0;
+    color: #c7c0df;
+    font-size: 18px;
+    letter-spacing: .1em;
+    pointer-events: none;
+    animation: hintBob 1.3s ease-in-out infinite;
+}
+
 /* =========================================
-   第四頁：前情提要（打字機效果）與 Parallax.js 筆記線索頁面
+   第四頁-2：前情提要與 Parallax.js 筆記線索頁面
    ========================================= */
 .confession-room-scene {
     position: fixed;
@@ -1913,13 +2028,12 @@ body {
     opacity: 1;
 }
 
-/* 中央洋紅粗框漸層警告視窗 */
+/* 中央洋紅粗框霧面警告視窗 */
 .warning-card-frame {
     position: relative;
     z-index: 3;
     width: min(86vw, 490px);
-      padding: 4px;
-        background-color: #8b1c5a;
+    border: 4px solid #8b1c5a;
     border-radius: 9px;
     box-shadow:
         0 14px 32px rgba(8, 8, 28, 0.6),
@@ -1956,7 +2070,9 @@ body {
     min-height: clamp(210px, 31vh, 268px);
     padding: clamp(28px, 4.5vh, 42px) clamp(20px, 3vw, 36px);
     border-radius: 6px;
-    background: linear-gradient(180deg, #7f83b6 0%, #64639b 48%, #484579 100%);
+    background: linear-gradient(180deg, rgba(127, 131, 182, 0.2) 0%, rgba(100, 99, 155, 0.2) 48%, rgba(72, 69, 121, 0.2) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2028,7 +2144,7 @@ body {
         0 1px 0 #1b102c,
         0 3px 8px rgba(14, 10, 32, 0.5);
 }
-/* 第七頁：五題互動系統 */
+/* 第七頁：九題互動系統 */
 /* 獨立場景，沿用原本 is-active 切頁慣例 */
 .question-scene {
     position: fixed;
@@ -2083,8 +2199,9 @@ body {
 }
 
 .question-scene.is-entering .question-continue-hint,
-.question-choice-panel.is-ready ~ .question-continue-hint,
-.question-finish:not([hidden]) ~ .question-continue-hint {
+.question-scene.is-answering .question-continue-hint,
+.question-scene.is-complete .question-continue-hint,
+.question-choice-panel.is-ready ~ .question-continue-hint {
     opacity: 0;
     visibility: hidden;
 }
@@ -2253,6 +2370,17 @@ body {
     border-bottom-right-radius: 5px;
 }
 
+.question-bubble.is-thought {
+    background: rgba(37, 33, 72, .85);
+    color: #f3d9ae;
+    font-size: clamp(14px, 1.15vw, 20px);
+    font-style: italic;
+}
+
+.question-bubble.is-thought::after {
+    display: none;
+}
+
 .question-bubble.is-fill-in {
     box-sizing: border-box;
     width: 86%;
@@ -2264,6 +2392,10 @@ body {
 
 .question-bubble-text {
     animation: questionTextGlow 2.4s ease-in-out infinite;
+}
+
+.question-bubble-text .is-incorrect {
+    color: #ff5c5c;
 }
 
 .question-bubble.is-typing .question-bubble-text::after {
@@ -2457,6 +2589,17 @@ body {
 
 .question-choice-text {
     position: relative;
+    color: #ffffff;
+}
+
+.question-choice-hint:not([hidden]) {
+    position: relative;
+    display: block;
+    margin-top: 2px;
+    color: #1d215e;
+    font-size: .72em;
+    letter-spacing: .08em;
+    overflow-wrap: anywhere;
 }
 
 .question-choice:hover::before {
@@ -2487,32 +2630,6 @@ body {
 
 .question-choice:disabled {
     opacity: .6;
-}
-
-/* 【新增】題目結束畫面 */
-.question-finish {
-    position: absolute;
-    z-index: 3;
-    inset: 25% 25%;
-    background: rgba(11, 9, 45, .94);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    font-size: clamp(18px, 2vw, 30px);
-}
-
-.question-finish[hidden] {
-    display: none;
-}
-
-.question-finish button {
-    border: 0;
-    border-radius: 8px;
-    padding: 12px 24px;
-    background: #c7c0df;
 }
 
 @media (max-width:650px) {
@@ -3959,42 +4076,6 @@ body {
   -webkit-user-drag: none;
 }
 
-.excuse-scene .candle-flame-slot {
-  position: absolute;
-  width: clamp(13.46px, 1.923vw, 34.62px);
-  height: clamp(13.95px, 1.919vw, 32.56px);
-  transform: translate(-50%, -100%);
-}
-
-.excuse-scene .slot-1 {
-  left: 9.635%;
-  top: 56.667%;
-}
-.excuse-scene .slot-2 {
-  left: 13.281%;
-  top: 60.37%;
-}
-.excuse-scene .slot-3 {
-  left: 16.406%;
-  top: 55%;
-}
-.excuse-scene .slot-4 {
-  left: 20.417%;
-  top: 59.444%;
-}
-.excuse-scene .slot-5 {
-  left: 24.583%;
-  top: 58.333%;
-}
-.excuse-scene .slot-6 {
-  left: 28.646%;
-  top: 59.815%;
-}
-.excuse-scene .slot-7 {
-  left: 32.188%;
-  top: 64.444%;
-}
-
 @media (max-width: 650px) {
   .excuse-candles-wrap {
     left: calc(8.6% - 8.105vw);
@@ -4360,20 +4441,32 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  isolation: isolate;
   gap: 12px;
   padding: 0 24px;
-  background: #111015;
-  border: 1px solid #45424a;
-  border-radius: 999px;
-  color: #d3d1d5;
+  background: transparent;
+  border: 0;
+  color: var(--audio-text);
   font: 400 20px/1 "PingFang TC", "Microsoft JhengHei", sans-serif;
+  letter-spacing: 2px;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.25s;
 }
 
+.audio-settings-trigger::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: rgba(18, 15, 23, 0.5);
+  border: 1px solid var(--audio-line);
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px,
+    100% calc(100% - 10px), calc(100% - 10px) 100%,
+    10px 100%, 0 calc(100% - 10px), 0 10px);
+  transition: background 0.25s;
+}
 .audio-settings-trigger svg { width: 22px; height: 22px; flex: none; }
-.audio-settings-trigger:hover { background: #453a4c; }
+.audio-settings-trigger:hover::before { background: rgba(69, 58, 76, 0.3); }
 
 .audio-settings-backdrop {
   position: fixed;
@@ -4773,4 +4866,40 @@ html,
 
   z-index: 99998;
   pointer-events: none;
+}
+
+@media (max-width: 650px) {
+    .how-to-scene .howto-container {
+        width: 90vw;
+        gap: clamp(16px, 3vh, 28px);
+    }
+
+    .how-to-scene .howto-list {
+        gap: clamp(16px, 3vh, 28px);
+    }
+
+    .how-to-scene .howto-row {
+        grid-template-columns: minmax(75px, 28%) minmax(12px, 1fr) minmax(0, 55%);
+        gap: 8px;
+    }
+
+    .how-to-scene .howto-desc {
+        white-space: normal;
+        font-size: clamp(13px, 3.2vw, 16px);
+        letter-spacing: 0;
+        line-height: 1.5;
+    }
+}
+
+@media (max-height: 500px) {
+    .how-to-scene {
+        align-items: safe center;
+        overflow-y: auto;
+    }
+
+    .howto-container {
+        flex-shrink: 0;
+        margin: auto;
+        padding: 16px 0;
+    }
 }
