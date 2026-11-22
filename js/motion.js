@@ -1699,10 +1699,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function syncQuestionDialogueBounds() {
     const stageBounds = questionStage.getBoundingClientRect();
     const choiceBounds = questionChoicePanel.getBoundingClientRect();
-    questionDialogues.style.bottom = `${stageBounds.bottom - choiceBounds.top}px`;
+    questionDialogues.style.bottom = `calc(${stageBounds.bottom - choiceBounds.top}px + clamp(8px, 1vw, 16px))`;
   }
 
   window.addEventListener("resize", syncQuestionDialogueBounds);
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(syncQuestionDialogueBounds).observe(questionChoicePanel);
+  }
 
   // 題目流程：保存題目索引、對話進度、答案、扣分與防重複點擊狀態。
 
@@ -1745,10 +1748,6 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           side: "right",
           text: "……日安，神父",
-        },
-        {
-          side: "right",
-          text: "我已許久沒有進行告解，請幫助我。",
         },
         {
           side: "left",
@@ -2327,6 +2326,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showQuestionChoices() {
+    syncQuestionDialogueBounds();
+    questionDialogues.scrollTop = questionDialogues.scrollHeight;
     questionChoicePanel.classList.add("is-ready");
     gameSfx.play("options-reveal");
     questionButtons.forEach((button) => {
