@@ -4652,6 +4652,8 @@ const commonDialoguesRounds = [
     let isStarting = false;
 
     let playbackId = 0;
+    let videoFrameRequest = null;
+    const fadeDuration = 1200;
 
     // 記錄玩家是否已手動開啟聲音
     let userEnabledSound = false;
@@ -4812,32 +4814,48 @@ const commonDialoguesRounds = [
        【七】結束開場動畫
        ====================================== */
 
+    function updateOpeningVisibility() {
+        if (isFinished) return;
+        const controlsOpacity = Math.max(0, Math.min(1, (26 - openingVideo.currentTime) / 1.2));
+        openingScreen.style.setProperty("--opening-controls-opacity", controlsOpacity);
+        openingScreen.classList.toggle("is-video-tail", openingVideo.currentTime >= 26);
+    }
+
+    function followOpeningVideo() {
+        videoFrameRequest = null;
+        if (isFinished || openingVideo.paused || openingVideo.ended) return;
+        updateOpeningVisibility();
+        videoFrameRequest = requestAnimationFrame(followOpeningVideo);
+    }
+
     function finishOpeningVideo() {
 
         // 避免重複執行
         if (isFinished) return;
 
+        updateOpeningVisibility();
+        const tailHidden = openingScreen.classList.contains("is-video-tail");
         isFinished = true;
         playbackId++;
         isStarting = false;
+        if (videoFrameRequest !== null) {
+            cancelAnimationFrame(videoFrameRequest);
+            videoFrameRequest = null;
+        }
 
         // 停止影片播放
         openingVideo.pause();
 
-        // 隱藏按鈕
-        skipBtn.hidden = true;
-        hideSoundButton();
+        if (!tailHidden) openingScreen.classList.add("is-finished");
 
-        // 啟動淡出動畫
-        openingScreen.classList.add("is-finished");
-
-        // 等待淡出完成
         setTimeout(() => {
 
+            skipBtn.hidden = true;
+            hideSoundButton();
             openingScreen.hidden = true;
             window.dispatchEvent(new Event("openingVideoFinished"));
 
-        }, 1200);
+        }, tailHidden ? 0 : fadeDuration);
     }
 
     /* ======================================
@@ -4862,11 +4880,12 @@ const commonDialoguesRounds = [
         isFinished = false;
         userEnabledSound = false;
         openingVideo.currentTime = 0;
+        updateOpeningVisibility();
         skipBtn.hidden = false;
         skipBtn.textContent = "跳過序幕 »";
         hideSoundButton();
         openingScreen.hidden = false;
-        openingScreen.classList.remove("is-finished");
+        openingScreen.classList.remove("is-finished", "is-video-tail");
         window.dispatchEvent(new Event("openingVideoStarted"));
         startOpeningVideo();
     });
@@ -4876,6 +4895,15 @@ const commonDialoguesRounds = [
         "ended",
         finishOpeningVideo
     );
+
+    openingVideo.addEventListener("playing", () => {
+        if (videoFrameRequest === null) {
+            videoFrameRequest = requestAnimationFrame(followOpeningVideo);
+        }
+    });
+    ["timeupdate", "seeking", "seeked"].forEach((eventName) => {
+        openingVideo.addEventListener(eventName, updateOpeningVisibility);
+    });
 
     /* ======================================
        【九】影片載入錯誤

@@ -5081,10 +5081,6 @@ html,
     opacity: 1;
     visibility: visible;
 
-    /* 影片結束時淡出 */
-    transition:
-        opacity 1.2s ease,
-        visibility 1.2s ease;
 }
 .opening-screen[hidden] { display: none; }
 
@@ -5176,6 +5172,18 @@ html,
     color: #17131d;
 }
 
+.opening-skip-btn,
+.opening-sound-btn {
+    opacity: var(--opening-controls-opacity, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .opening-skip-btn,
+    .opening-sound-btn {
+        opacity: 1;
+    }
+}
+
 /* 【功能】確保 hidden 屬性生效 */
 .opening-sound-btn[hidden],
 .opening-skip-btn[hidden] {
@@ -5204,6 +5212,14 @@ html,
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    transition: opacity 1.2s ease, visibility 1.2s ease;
+}
+
+.opening-screen.is-video-tail {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: none;
 }
 
 /* ==========================================
