@@ -2103,27 +2103,26 @@ body {
     transform: translateY(0);
 }
 
-/* 「開始遊戲」洋紅立體按鈕 */
+/* 「進入告解室」按鈕 */
 .warning-start-btn {
-    padding: 0.48em 1.45em;
-    background-color: #656ca6;
+    position: relative;
+    isolation: isolate;
+    width: min(100%, 260px);
+    min-height: clamp(52px, 6.5vh, 78px);
+    padding: 14px 36px;
+    background: transparent;
     color: #ffffff;
-    border: none;
-    border-radius: 6px;
+    border: 0;
     font-family: inherit;
-    font-size: clamp(14px, 1.25vw, 18px);
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    box-shadow:
-        0 3px 0 #1b102c,
-        0 6px 14px rgba(14, 10, 32, 0.45);
+    font-size: clamp(16px, 1.65vw, 25px);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: .18em;
     opacity: 0;
     transform: translateY(8px);
     transition:
         opacity 0.65s ease 1.05s,
-        transform 0.25s ease,
-        background-color 0.25s ease,
-        box-shadow 0.25s ease;
+        transform 0.2s ease;
 }
 
 .warning-scene.is-active .warning-start-btn {
@@ -2131,20 +2130,13 @@ body {
     transform: translateY(0);
 }
 
-.warning-start-btn:hover {
-    background-color: #3f4792;
+.warning-scene.is-active .warning-start-btn:hover {
     transform: translateY(-2px);
-    box-shadow:
-        0 5px 0 #1b102c,
-        0 10px 20px rgba(38, 42, 81, 0.45);
 }
 
-.warning-start-btn:active,
-.warning-start-btn.is-pressed {
-    transform: translateY(2px);
-    box-shadow:
-        0 1px 0 #1b102c,
-        0 3px 8px rgba(14, 10, 32, 0.5);
+.warning-scene.is-active .warning-start-btn:active,
+.warning-scene.is-active .warning-start-btn.is-pressed {
+    transform: scale(.97);
 }
 /* 第七頁：九題互動系統 */
 /* 獨立場景，沿用原本 is-active 切頁慣例 */
@@ -2555,7 +2547,8 @@ body {
     transition: transform .2s;
 }
 
-.question-choice::before {
+.question-choice::before,
+.warning-start-btn::before {
     content: "";
     position: absolute;
     inset: 5px 4px;
@@ -2604,7 +2597,8 @@ body {
     overflow-wrap: anywhere;
 }
 
-.question-choice:hover::before {
+.question-choice:hover::before,
+.warning-start-btn:hover::before {
     background: rgba(164, 162, 215, .7);
 }
 
@@ -2617,11 +2611,13 @@ body {
 }
 
 .question-choice:hover .question-choice-border-outer,
-.question-choice.is-selected .question-choice-border-outer {
+.question-choice.is-selected .question-choice-border-outer,
+.warning-start-btn:hover .question-choice-border-outer {
     stroke: #fff;
 }
 
-.question-choice:focus-visible {
+.question-choice:focus-visible,
+.warning-start-btn:focus-visible {
     outline: 2px solid #fff;
     outline-offset: 3px;
 }
