@@ -10,8 +10,57 @@
 </head>
 
 <body>
+
+<!-- ==========================================
+     【新增】MP4 開場動畫
+     放置於 body 標籤最前面
+     ========================================== -->
+
+<div class="opening-screen" id="openingScreen">
+
+    <!-- 【新增】開場 MP4 影片 -->
+    <video
+        id="openingVideo"
+        class="opening-video"
+        playsinline
+        preload="auto"
+    >
+        <source
+            src="./video/confessional.mp4"
+            type="video/mp4"
+        >
+        您的瀏覽器不支援 MP4 影片。
+    </video>
+
+    <!-- 【新增】右上角：跳過序幕 -->
+    <button
+        type="button"
+        class="opening-skip-btn"
+        id="openingSkipBtn"
+    >
+        跳過序幕 »
+    </button>
+
+    <!-- 【新增】右下角：開啟聲音 -->
+    <button
+        type="button"
+        class="opening-sound-btn"
+        id="openingSoundBtn"
+        hidden
+    >
+        ♫ 開啟聲音
+    </button>
+
+</div>
+
+<!-- ==========================================
+     以下保留原本的遊戲 HTML
+     不需要刪除或修改
+     ========================================== -->
+
     <!-- 第一頁：開場動畫頁面 -->
-    <main class="stage intro-scene is-active" id="introScene">
+    <main class="stage intro-scene is-active" id="introScene" inert>
+        <button type="button" class="opening-replay-btn" id="openingReplayBtn">重播序幕</button>
         <div class="scene">
             <!-- 第一層（背景）：告解室線條描繪，隨後淡出退為背景 -->
             <svg class="svg-draw-logo" id="logoSvg" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg"
@@ -846,26 +895,32 @@
 
 <!-- 第八頁：結局畫面。 -->
 <div class="ending-scene" id="endingScene" aria-label="故事結局">
+  <section class="ending-story" id="endingStory" aria-label="結局對話" hidden>
+    <p class="ending-story-heading" lang="en">The Final Confession</p>
+    <div class="ending-story-dialogue">
+      <p class="ending-story-speaker" id="endingStorySpeaker"></p>
+      <p class="ending-story-line" id="endingStoryLine"></p>
+    </div>
+    <button class="ending-story-continue" id="endingStoryContinue" type="button">
+      <span class="ending-story-continue-label" id="endingStoryHint"><span aria-hidden="true">✧</span> 點擊畫面，聆聽下一段告解 <span aria-hidden="true">✧</span></span>
+    </button>
+  </section>
+  <p class="ending-cg-caption" id="endingCgCaption" hidden></p>
+  <p class="sr-only" id="endingStatus" role="status" aria-live="polite"></p>
 <section class="ending" data-ending="prison" hidden aria-label="監獄結局">
     <div class="portrait" aria-hidden="true"><img src="./images/bg/endding-1.PNG" alt="神父神情"></div>
     <div class="light" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true"></div>
-    <section class="dialogues" aria-label="神父的最後告解">
-      <p class="dialogue" data-text="很抱歉。"><span></span></p>
-      <p class="dialogue" data-text="我無法信任您。"><span></span></p>
-      <p class="dialogue" data-text="祝您在監獄的生活愉快。"><span></span></p>
-    </section>
     <div class="vignette" aria-hidden="true"></div>
     <section class="verdict" aria-labelledby="prison-endingTitle" inert>
       <p class="eyebrow">ENDING 01 · 信任崩解</p>
       <h1 id="prison-endingTitle">告解，到此為止。</h1>
       <p class="verdict-copy">信任的燭火將盡。<br>鐵門之後，只剩下你自己的呼吸。</p>
       <div class="ending-actions">
-        <button id="prison-replay" type="button">重播第一種結局</button>
+        <button class="ending-replay" id="prison-replay" type="button">重播第一種結局</button>
         <button class="back-to-intro" type="button">回到開場</button>
       </div>
     </section>
-    <p id="prison-status" class="sr-only" role="status" aria-live="polite"></p>
   </section>
   <section class="ending" data-ending="escape" hidden aria-label="逃跑結局">
     <div class="escape-camera" aria-hidden="true">
@@ -888,22 +943,16 @@
     <div class="passing-shadow" aria-hidden="true"></div>
     <div class="light" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true"></div>
-    <section class="dialogues" aria-label="逃離之後的獨白">
-      <p class="dialogue" data-text="……真是可惜"><span></span></p>
-      <p class="dialogue" data-text="看來這裡已經不適合再留下"><span></span></p>
-      <p class="dialogue" data-text="下一站——該去哪呢"><span></span></p>
-    </section>
     <div class="vignette" aria-hidden="true"></div>
     <section class="verdict" aria-labelledby="escape-endingTitle" inert>
       <p class="eyebrow">ENDING 02 · 逃離告解室</p>
       <h1 id="escape-endingTitle">下一站，無人知曉。</h1>
       <p class="verdict-copy">列車消失在火光中。<br>你和行李早已不在車上。</p>
       <div class="ending-actions">
-        <button id="escape-replay" type="button">重播第二種結局</button>
+        <button class="ending-replay" id="escape-replay" type="button">重播第二種結局</button>
         <button class="back-to-intro" type="button">回到開場</button>
       </div>
     </section>
-    <p id="escape-status" class="sr-only" role="status" aria-live="polite"></p>
   </section>
 
   <section class="ending concealed-ending" data-ending="concealed" hidden aria-label="身分未被識破的結局">
@@ -914,21 +963,15 @@
       <img class="concealed-prayer" src="./images/PC_B/PC_right.PNG" alt="右側角色">
     </div>
     <div class="dust" aria-hidden="true"></div>
-    <section class="dialogues" aria-label="主角的內心獨白">
-      <p class="dialogue" data-text="一切如同計畫一般"><span></span></p>
-      <p class="dialogue" data-text="歡迎您成為我的刀下亡魂"><span></span></p>
-      <p class="dialogue" data-text="……我親愛的神父"><span></span></p>
-    </section>
     <section class="verdict" aria-labelledby="concealed-endingTitle" inert>
       <p class="eyebrow">ENDING 03 · 無人識破</p>
       <h1 id="concealed-endingTitle">告解結束，祕密仍在。</h1>
       <p class="verdict-copy">你走出告解室，沒有人認出你的真面目。</p>
       <div class="ending-actions">
-        <button id="concealed-replay" type="button">重播第三種結局</button>
+        <button class="ending-replay" id="concealed-replay" type="button">重播第三種結局</button>
         <button class="back-to-intro" type="button">回到開場</button>
       </div>
     </section>
-    <p id="concealed-status" class="sr-only" role="status" aria-live="polite"></p>
   </section>
 
 </div>

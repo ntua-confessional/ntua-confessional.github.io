@@ -37,6 +37,28 @@ body {
     pointer-events: auto;
 }
 
+.opening-replay-btn {
+    position: fixed;
+    top: 24px;
+    right: 180px;
+    min-height: 54px;
+    padding: 0 20px;
+    border: 1px solid #c7c0df;
+    background: rgba(18, 15, 23, 0.5);
+    color: #eee7ef;
+    font: 400 18px/1 "PingFang TC", "Microsoft JhengHei", sans-serif;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.opening-replay-btn:hover { background: rgba(69, 58, 76, 0.5); }
+.opening-replay-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.intro-scene:not(.is-active) .opening-replay-btn { visibility: hidden; }
+@media (max-width: 650px) {
+    .opening-replay-btn { top: 12px; right: 164px; }
+}
+
 .scene {
     position: relative;
     width: min(76vw, 900px);
@@ -4438,6 +4460,99 @@ body {
 .ending-scene * { box-sizing: border-box; }
 .ending-scene button { font: inherit; color: inherit; }
 .ending-scene button:focus-visible { outline: 2px solid #f1c5e9; outline-offset: 6px; }
+.ending-story {
+  --ending-story-accent: #efba79;
+  position: absolute;
+  z-index: 7;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  align-items: center;
+  gap: 16px;
+  padding: clamp(44px, 10svh, 108px) clamp(24px, 8vw, 120px) clamp(30px, 8svh, 86px);
+  background: inherit;
+  color: #f4f5fc;
+  font-family: "Noto Serif TC", "PMingLiU", serif;
+  text-align: center;
+  cursor: pointer;
+}
+.ending-story[hidden] { display: none; }
+.ending-story.is-shaking { animation: endingStoryShake .3s linear infinite; }
+@keyframes endingStoryShake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 2px); }
+  40% { transform: translate(5px, -2px); }
+  60% { transform: translate(-4px, -1px); }
+  80% { transform: translate(4px, 2px); }
+}
+.ending-story::before {
+  content: "";
+  position: absolute;
+  inset: clamp(12px, 3vw, 36px);
+  border: 1px solid var(--ending-story-accent);
+  opacity: .45;
+  pointer-events: none;
+}
+.ending-story-heading,
+.ending-story-speaker {
+  margin: 0;
+  color: var(--ending-story-accent);
+  letter-spacing: .25em;
+  font-size: clamp(12px, 1.4vw, 17px);
+}
+.ending-story-heading { text-transform: uppercase; }
+.ending-story-line {
+  margin: .75em 0 0;
+  min-height: 3.5em;
+  line-height: 1.75;
+  font-size: clamp(22px, 3.2vw, 42px);
+  overflow-wrap: anywhere;
+}
+.ending-story-line.is-typing::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: .9em;
+  margin-inline-start: .15em;
+  background: currentColor;
+  animation: cursorBlink .8s steps(1) infinite;
+}
+.ending-scene .ending-story-continue {
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ending-story-accent);
+  font-size: clamp(13px, 1.2vw, 16px);
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+.ending-story-continue-label {
+  display: inline-block;
+  animation: hintFloat 1.4s ease-in-out infinite, endingHintBreathe 2.6s ease-in-out infinite;
+}
+.ending-cg-caption {
+  position: absolute;
+  z-index: 6;
+  right: clamp(10px, 2vw, 40px);
+  bottom: clamp(32px, 8svh, 90px);
+  width: min(42%, 560px);
+  margin: 0;
+  padding: 14px 20px;
+  color: #f4f5fc;
+  font: 400 clamp(16px, 1.8vw, 23px)/1.8 "Noto Serif TC", "PMingLiU", serif;
+  letter-spacing: .12em;
+  text-align: center;
+  white-space: pre-line;
+  pointer-events: none;
+}
+.ending-cg-caption[hidden] { display: none; }
+@media (max-aspect-ratio: 1/1) {
+  .ending-cg-caption { right: 5%; width: min(80%, 360px); }
+}
+@keyframes endingHintBreathe {
+  50% { opacity: .65; }
+}
 .ending-scene .ending { position: absolute; inset: 0; width: 100%; height: 100svh; min-height: 400px; }
 .ending{position:relative;width:100%;height:100svh;min-height:400px;overflow:hidden;isolation:isolate;background:#27265e}
 
@@ -4464,9 +4579,9 @@ body {
 .ending.is-closing .dialogues{transition:opacity 1.4s;opacity:0}
 
 .vignette{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at 40% 42%,transparent 20%,#090a2455 65%,#030511cb 110%);transition:background 2s}
-.verdict{position:absolute;z-index:6;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#0d10255c;opacity:0;visibility:hidden;transition:opacity 1.8s}
+.verdict{position:absolute;z-index:6;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#0d10252e;opacity:0;visibility:hidden;transition:opacity 1s ease}
 .verdict.is-visible{opacity:1;visibility:visible}.eyebrow{font-size:12px;letter-spacing:.35em;color:#b1a4ce}.verdict h1{font-size:clamp(25px,4vw,54px);font-weight:400;letter-spacing:.16em;margin:20px 0}.verdict-copy{color:#c2bed0;font-size:14px;line-height:2.2;letter-spacing:.12em}
-.verdict button{border:1px solid #c7bdd752;background:#24233d9c;border-radius:30px;padding:10px 22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);margin-top:22px}
+.verdict .ending-actions button{border:1px solid #c7bdd752;background:#24233d9c;border-radius:30px;padding:10px 22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 
 :root {
   --audio-line: #c7c0df;
@@ -4944,5 +5059,172 @@ html,
         flex-shrink: 0;
         margin: auto;
         padding: 16px 0;
+    }
+}
+
+/* ==========================================
+   【新增】MP4 開場動畫系統
+   ========================================== */
+
+/* 【功能】全螢幕影片容器 */
+.opening-screen {
+    position: fixed;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+
+    z-index: 99999;
+    background: #000;
+
+    opacity: 1;
+    visibility: visible;
+
+    /* 影片結束時淡出 */
+    transition:
+        opacity 1.2s ease,
+        visibility 1.2s ease;
+}
+.opening-screen[hidden] { display: none; }
+
+/* 【功能】MP4 影片本體 */
+.opening-video {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    /* 完整顯示影片，不裁切 */
+    object-fit: contain;
+
+    background: #000;
+}
+
+/* ==========================================
+   【新增】跳過序幕按鈕
+   ========================================== */
+
+.opening-skip-btn {
+    position: absolute;
+    z-index: 3;
+
+    top: 5%;
+    right: 5%;
+
+    padding: 12px 24px;
+
+    border: 1px solid #b59c73;
+    border-radius: 4px;
+
+    background: rgba(15, 12, 22, 0.75);
+    color: #e3d5b7;
+
+    font-size: 16px;
+    letter-spacing: 2px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+/* 【功能】滑鼠移入效果 */
+.opening-skip-btn:hover {
+    background: #b59c73;
+    color: #17131d;
+
+    box-shadow:
+        0 0 18px rgba(181, 156, 115, 0.35);
+}
+
+/* ==========================================
+   【新增】開啟聲音按鈕
+   ========================================== */
+
+.opening-sound-btn {
+    position: absolute;
+    z-index: 3;
+
+    right: 5%;
+    bottom: 7%;
+
+    padding: 14px 28px;
+
+    border: 1px solid #b59c73;
+    border-radius: 4px;
+
+    background: rgba(15, 12, 22, 0.85);
+    color: #e3d5b7;
+
+    font-size: 17px;
+    letter-spacing: 2px;
+
+    cursor: pointer;
+
+    /* 持續柔和發光 */
+    animation:
+        openingSoundGlow 2s ease-in-out infinite;
+}
+
+/* 【功能】滑鼠移入效果 */
+.opening-sound-btn:hover {
+    background: #b59c73;
+    color: #17131d;
+}
+
+/* 【功能】確保 hidden 屬性生效 */
+.opening-sound-btn[hidden],
+.opening-skip-btn[hidden] {
+    display: none;
+}
+
+/* 【功能】聲音按鈕光暈動畫 */
+@keyframes openingSoundGlow {
+
+    0%, 100% {
+        box-shadow:
+            0 0 5px rgba(181, 156, 115, 0.2);
+    }
+
+    50% {
+        box-shadow:
+            0 0 20px rgba(181, 156, 115, 0.65);
+    }
+}
+
+/* ==========================================
+   【新增】影片結束淡出
+   ========================================== */
+
+.opening-screen.is-finished {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* ==========================================
+   【新增】手機版按鈕調整
+   ========================================== */
+
+@media (max-width: 650px) {
+
+    .opening-skip-btn {
+        top: 4%;
+        right: 4%;
+
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    .opening-sound-btn {
+        right: 4%;
+        bottom: 5%;
+
+        padding: 12px 18px;
+        font-size: 14px;
     }
 }

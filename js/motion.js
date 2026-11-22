@@ -1173,6 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     resetIntro();
 
     requestAnimationFrame(() => {
+      if (introScene.inert) return;
       timers.push(
         setTimeout(() => {
           // 1. 「告解室」線條描繪並填滿原色
@@ -1484,8 +1485,23 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 綁定開場到警告頁的按鈕、角色、教學互動事件。
-  playIntroSequence();
+  // 等影片畫面淡出後才開始第一頁動畫。
+  function startIntroAfterVideo() {
+    introScene.inert = false;
+    playIntroSequence();
+  }
+
+  const openingScreen = document.getElementById("openingScreen");
+  window.addEventListener("openingVideoFinished", startIntroAfterVideo);
+  window.addEventListener("openingVideoStarted", () => {
+    resetIntro();
+    introScene.inert = true;
+  });
+  if (openingScreen && !openingScreen.hidden) {
+    resetIntro();
+  } else {
+    startIntroAfterVideo();
+  }
 
   const flameHits = candelSvg.querySelectorAll(".flame-hit");
   [enterText, ...flameHits].forEach((target) => {
@@ -2266,11 +2282,11 @@ document.addEventListener("DOMContentLoaded", () => {
         { 
           side: "right",
           type: "thought",
-          text: "「「那些傢伙……沒有一個是無辜的」」"
+          text: "「那些傢伙……沒有一個是無辜的」"
         },
         { side: "right", 
           type: "thought",
-         text: "法律既然無法制裁他們，自然得由其他人動手」" },
+         text: "「法律既然無法制裁他們，自然得由其他人動手」" },
         { 
           side: "right",
          text: "我認為，他們應當＿＿＿＿。" },
@@ -3986,7 +4002,7 @@ const commonDialoguesRounds = [
 
     if (isPassed) {
       playTone(659.25, 0.36, "triangle", 0.2, 1.15);
-      showFeedbackBanner("完美通過，不扣分", true);
+      showFeedbackBanner("完美通過", true);
 
       appendSpeechBubble({
         side: "left",
@@ -4122,159 +4138,258 @@ const commonDialoguesRounds = [
   'use strict';
   const endingScene = document.getElementById('endingScene');
   const scenes = [...endingScene.querySelectorAll('[data-ending]')];
-  const controllers = new Map();
+  const story = document.getElementById('endingStory');
+  const speaker = document.getElementById('endingStorySpeaker');
+  const line = document.getElementById('endingStoryLine');
+  const continueButton = document.getElementById('endingStoryContinue');
+  const hint = document.getElementById('endingStoryHint');
+  const caption = document.getElementById('endingCgCaption');
+  const status = document.getElementById('endingStatus');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  let active = null;
-  const audioSettingsTrigger = document.getElementById('audioSettingsTrigger');
-  const escapeDurations = {
-    travel: 2300,
-    shadow: 420,
-    emptyCar: 1100,
-    verdictDelay: 720
+  const typewriter = createTypewriter(65, 255);
+  const captionTypewriter = createTypewriter(65, 255);
+
+  const endings = {
+    prison: {
+      lines: [
+        { speaker: '神父', text: '你在長夜面前所說的謊言，終將成為揭露罪行的證據' },
+        { speaker: '神父', text: '如此年輕，卻背負著這般沉重的罪孽……願你能為自己的所作所為付出代價' },
+        { speaker: '你', text: '我親愛的神父，您又何嘗不是如此？' },
+        { speaker: '你', text: '難道只要披上神聖的外衣，就能在長夜的注視下，對自己的罪行視而不見？' },
+        { speaker: '神父', text: '……' },
+        { speaker: '神父', text: '我是否有罪，自有長夜裁決' },
+        { speaker: '你', text: '……呵' },
+        { speaker: '你', text: '真是令人失望啊，神父' }
+      ],
+      result: '結局一：信任崩解。'
+    },
+    escape: {
+      lines: [
+        { speaker: '神父', text: '……' },
+        { speaker: '神父', text: '雖然仍有些疑慮，但長夜願意相信你的虔誠與誠實' },
+        { speaker: '你', text: '能得到您的信任，是我的榮幸' },
+        { speaker: '神父', text: '願這場告解能讓您的內心得到片刻安寧' },
+        { speaker: '神父', text: '願若往後仍有迷惘，告解室的大門隨時為您敞開' },
+        { speaker: '你', text: '那可真是令人安心' },
+        { speaker: '你', text: '願長夜與您相伴，神父' },
+        { speaker: '神父', text: '……願長夜與您同在' }
+      ],
+      result: '結局二：逃離告解室。'
+    },
+    concealed: {
+      lines: [
+        { speaker: '神父', text: '……不知道下一位受害者，又會是誰' },
+        { speaker: '神父', text: '但願警探們能早日找出兇手，別再讓無辜之人喪命' },
+        { speaker: '你', text: '一定會的' },
+        { speaker: '你', text: '畢竟，長夜始終注視著我們' },
+        { speaker: '你', text: '在祂的凝視之下，所有罪行與謊言，終究無所遁形' },
+        { speaker: '神父', text: '……！！！', shake: true },
+        { speaker: '你', text: '……' },
+        { speaker: '你', text: '歡迎您成為我的刀下亡魂' },
+        { speaker: '你', text: '……我親愛的神父' }
+      ],
+      result: '結局三：無人識破。'
+    }
   };
 
-  const endingDetails = {
-    prison: { result: '結局一：信任崩解。' },
-    escape: { result: '結局二：逃離告解室。' },
-    concealed: { result: '結局三：無人識破。' }
-  };
+  let activeScene;
+  let index = 0;
+  let storyFade = null;
+  let captionFade = null;
+  let timers = [];
 
-  for (const root of scenes) {
-    const name = root.dataset.ending;
-    const find = id => root.querySelector('#' + name + '-' + id);
-    const lines = [...root.querySelectorAll('.dialogue')];
-    const verdict = root.querySelector('.verdict');
-    const status = find('status');
-    // 修改三個 .dialogue 的 data-text 即可更換對話。
-    let index = -1, state = 'ready', chars = [], cursor = 0;
-    let typingTimer, nextTimer, closeTimer, verdictTimer, departTimer, railTimer;
-    function finishLine() {
-      clearTimeout(typingTimer);
-      const line = lines[index];
-      line.querySelector('span').textContent = line.dataset.text;
-      line.classList.remove('is-speaking'); state = 'waiting';
-      status.textContent = line.dataset.text;
-      const delay = index === lines.length - 1
-        ? Math.max(2500, chars.length * 140)
-        : Math.max(1500, chars.length * 100);
-      nextTimer = setTimeout(next, delay);
-    }
-    function typeNext() {
-      if (state !== 'typing') return;
-      const ch = chars[cursor++];
-      lines[index].querySelector('span').textContent += ch;
-      playTypingSound(ch, cursor);
-      if (cursor >= chars.length) { finishLine(); return; }
-      typingTimer = setTimeout(typeNext, /[，。！？]/u.test(ch) ? 320 : 65);
-    }
-    function railSound() {
-      const audio = gameAudio.context;
-      if (!audio || audio.state !== 'running') return;
-      const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
-      const underShadow = root.classList.contains('is-passing-shadow');
-      const peak = underShadow ? .045 : .09;
-      const scale = normalizedToneScale(peak, .001, 'triangle');
-      o.type = 'triangle'; o.frequency.setValueAtTime(underShadow ? 65 : 100, t);
-      o.frequency.exponentialRampToValueAtTime(35, t + .11);
-      g.gain.setValueAtTime(peak * scale, t);
-      g.gain.exponentialRampToValueAtTime(.001 * scale, t + .14);
-      o.connect(g).connect(gameAudio.output); o.start(); o.stop(t + .15);
-    }
-    function showVerdict() {
-      state = 'ended';
-      verdict.inert = false;
-      verdict.classList.add('is-visible');
-      find('replay').focus({preventScroll: true});
-      status.textContent = endingDetails[name].result;
-      root.dispatchEvent(new CustomEvent('ending:complete', {
-        bubbles: true,
-        detail: { id: name }
-      }));
+  function schedule(callback, delay) {
+    timers.push(setTimeout(callback, delay));
+  }
+
+  function clearEndingTimers() {
+    timers.forEach(clearTimeout);
+    timers = [];
+  }
+
+  function showLine() {
+    const { lines } = endings[activeScene.dataset.ending];
+    const { speaker: lineSpeaker, text, shake } = lines[index];
+    story.classList.toggle('is-shaking', Boolean(shake));
+    speaker.textContent = lineSpeaker;
+    const announce = () => {
+      status.textContent = `${lineSpeaker}：${text}`;
+      if (index === lines.length - 1) schedule(startCg, 1600);
+    };
+    hint.textContent = index === lines.length - 1
+      ? '✧ 你沉默許久，進入最後導向 ✧'
+      : '✧ 點擊畫面，聆聽對話 ✧';
+
+    if (reduced.matches) {
+      line.textContent = text;
+      announce();
+      return;
     }
 
-    function finishPrison() {
-      root.classList.add('is-closing');
-      verdictTimer = setTimeout(() => {
-        gameSfx.play("prison-lock");
-        showVerdict();
-      }, reduced.matches ? 0 : 1400);
+    typewriter.start(line, text, 65, announce);
+  }
+
+  story.addEventListener('click', () => {
+    if (story.hidden || storyFade || typewriter.finishImmediately()) return;
+
+    const id = activeScene.dataset.ending;
+    if (index + 1 < endings[id].lines.length) {
+      index++;
+      showLine();
+      return;
     }
 
-    function playEscape() {
-      const calm = reduced.matches;
-      root.classList.add('is-traveling');
-      status.textContent = '列車載著你和行李繼續向前。';
-      if (!calm) railTimer = setInterval(railSound, 345);
+  });
 
-      closeTimer = setTimeout(() => {
-        root.classList.add('is-passing-shadow');
-        gameSfx.play("train-shadow");
-
-        closeTimer = setTimeout(() => {
-          root.classList.replace('is-passing-shadow', 'is-empty');
-          status.textContent = '暗影掠過，車廂裡已經沒有人和行李。';
-
-          departTimer = setTimeout(() => {
-            clearInterval(railTimer);
-            root.classList.remove('is-traveling');
-            root.classList.add('is-departed');
-            gameSfx.play("train-fade");
-            verdictTimer = setTimeout(showVerdict, calm ? 0 : escapeDurations.verdictDelay);
-          }, calm ? 650 : escapeDurations.emptyCar);
-        }, calm ? 0 : escapeDurations.shadow);
-      }, calm ? 750 : escapeDurations.travel);
+  function startCg() {
+    if (reduced.matches) {
+      playCg();
+      return;
     }
 
-    function leaveConfession() {
-      root.classList.add('is-concealed');
-      status.textContent = '神父沒有起疑，你帶著祕密離開。';
-      verdictTimer = setTimeout(showVerdict, reduced.matches ? 0 : 1450);
-    }
+    storyFade = story.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: 850, easing: 'ease-in-out', fill: 'forwards' }
+    );
+    storyFade.onfinish = playCg;
+  }
 
-    function next() {
-      if (state === 'closing' || state === 'ended') return;
-      if (state === 'typing') return;
-      if (index === lines.length - 1) {
-        state = 'closing';
-        if (name === 'prison') finishPrison();
-        else if (name === 'escape') playEscape();
-        else leaveConfession();
-        return;
+  function playCg() {
+    story.hidden = true;
+    stopStoryFade();
+    activeScene.hidden = false;
+    const id = activeScene.dataset.ending;
+    const showCaption = (text, onDone) => {
+      caption.hidden = false;
+      if (caption.hasChildNodes()) caption.append(document.createTextNode('\n'));
+      const captionLine = document.createElement('span');
+      caption.append(captionLine);
+      const finishLine = () => {
+        status.textContent = text;
+        onDone();
+      };
+      if (reduced.matches) {
+        captionLine.textContent = text;
+        finishLine();
+      } else {
+        captionTypewriter.start(captionLine, text, 65, finishLine, false);
       }
-      index++; cursor = 0; state = 'typing';
-      if (name === 'concealed') {
-        root.dataset.dialogueStep = String(index + 1);
-        if (index === 0) gameSfx.play("concealed-wolf");
-      }
-      const line = lines[index]; chars = Array.from(line.dataset.text);
-      line.classList.add('is-visible', 'is-speaking');
-      if (reduced.matches || !chars.length) finishLine(); else typeNext();
+    };
+    const at = (normal, shorter, callback) => schedule(callback, reduced.matches ? shorter : normal);
+
+    if (id === 'prison') {
+      showCaption('神父的目光漸漸沉了下來', () => {
+        at(1200, 800, () => {
+          activeScene.classList.add('is-closing');
+          showCaption('信任的燭火熄滅，告解到此為止', () => at(1400, 800, fadeCaption));
+        });
+      });
+    } else if (id === 'escape') {
+      activeScene.classList.add('is-traveling');
+      showCaption('列車駛向遠方，下一站無人知曉', () => {
+        at(1700, 600, () => activeScene.classList.add('is-passing-shadow'));
+        at(2200, 1000, () => {
+          activeScene.classList.add('is-empty');
+          showCaption('光影掠過，座位上已不見你和行李', () => at(1400, 800, fadeCaption));
+          at(500, 400, () => activeScene.classList.remove('is-passing-shadow'));
+        });
+      });
+    } else {
+      at(900, 600, () => { activeScene.dataset.dialogueStep = '1'; });
+      showCaption('一切如同計畫一般。', () => {
+        at(1200, 800, () => {
+          activeScene.dataset.dialogueStep = '2';
+          showCaption('狼影浮現，祕密仍未被識破', () => {
+            activeScene.classList.add('is-concealed');
+            at(1900, 800, fadeCaption);
+          });
+        });
+      });
     }
-    function reset() {
-      [typingTimer, nextTimer, closeTimer, verdictTimer, departTimer].forEach(clearTimeout);
-      clearInterval(railTimer);
-      index = -1; state = 'ready';
-      delete root.dataset.dialogueStep;
-      root.classList.remove('is-concealed', 'is-traveling', 'is-passing-shadow', 'is-empty', 'is-departed', 'is-closing');
-      verdict.classList.remove('is-visible'); verdict.inert = true;
-      lines.forEach(line => {line.classList.remove('is-visible', 'is-speaking');line.querySelector('span').textContent = '';});
-      status.textContent = '';
+  }
+
+  function fadeCaption() {
+    if (reduced.matches) {
+      finishCg();
+      return;
     }
-    function start() {
-      reset();
-      audioSettingsTrigger.focus({preventScroll: true});
-      next();
+    captionFade = caption.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: 850, easing: 'ease-in-out', fill: 'forwards' }
+    );
+    captionFade.onfinish = finishCg;
+  }
+
+  function finishCg() {
+    const id = activeScene.dataset.ending;
+    const verdict = activeScene.querySelector('.verdict');
+    caption.hidden = true;
+    stopCaptionFade();
+    verdict.classList.add('is-visible');
+    verdict.inert = false;
+    activeScene.querySelector('.ending-replay').focus({ preventScroll: true });
+    status.textContent = endings[id].result;
+    activeScene.dispatchEvent(new CustomEvent('ending:complete', {
+      bubbles: true,
+      detail: { id }
+    }));
+  }
+
+  function stopStoryFade() {
+    if (!storyFade) return;
+    storyFade.onfinish = null;
+    storyFade.cancel();
+    storyFade = null;
+  }
+
+  function stopCaptionFade() {
+    if (captionFade) {
+      captionFade.onfinish = null;
+      captionFade.cancel();
+      captionFade = null;
     }
-    find('replay').addEventListener('click', start);
-    root.querySelector('.back-to-intro').addEventListener('click', () => window.location.reload());
-    controllers.set(name, { start, reset });
-    const dust = root.querySelector('.dust');
+  }
+
+  function startStory(scene) {
+    clearEndingTimers();
+    stopStoryFade();
+    stopCaptionFade();
+    typewriter.stop();
+    captionTypewriter.stop();
+    for (const ending of scenes) {
+      const verdict = ending.querySelector('.verdict');
+      verdict.classList.remove('is-visible');
+      verdict.inert = true;
+      ending.classList.remove('is-closing', 'is-traveling', 'is-empty', 'is-passing-shadow', 'is-concealed');
+      delete ending.dataset.dialogueStep;
+      ending.hidden = true;
+    }
+
+    activeScene = scene;
+    caption.hidden = true;
+    caption.replaceChildren();
+    status.textContent = '';
+    index = 0;
+    endingScene.classList.add('is-active');
+    story.hidden = false;
+    continueButton.focus({ preventScroll: true });
+    showLine();
+  }
+
+  for (const scene of scenes) {
+    scene.querySelector('.ending-replay').addEventListener('click', () => startStory(scene));
+    scene.querySelector('.back-to-intro').addEventListener('click', () => {
+      history.replaceState(history.state, '', '#return-to-intro');
+      window.location.reload();
+    });
+    const dust = scene.querySelector('.dust');
     for (let i = 0; i < 22; i++) {
       const speck = document.createElement('i');
       speck.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--duration:${8+Math.random()*10}s;--delay:${-Math.random()*18}s`;
       dust.append(speck);
     }
   }
+
 
   window.addEventListener('questionnaireCompleted', event => {
     const remaining = event.detail.remainingCandles;
@@ -4289,11 +4404,8 @@ const commonDialoguesRounds = [
     endingScene.querySelector('#escape-character-art').setAttribute('href', `./images/${characterFolder}/PC_sit.PNG`);
     endingScene.querySelector('.concealed-reveal').src = `./images/${characterFolder}/PC_left.PNG`;
     endingScene.querySelector('.concealed-prayer').src = `./images/${characterFolder}/PC_right.PNG`;
-    if (active !== null) controllers.get(active).reset();
-    active = remaining === 0 ? 'prison' : remaining < 7 ? 'escape' : 'concealed';
-    for (const scene of scenes) scene.hidden = scene.dataset.ending !== active;
-    endingScene.classList.add('is-active');
-    controllers.get(active).start();
+    const id = remaining === 0 ? 'prison' : remaining < 7 ? 'escape' : 'concealed';
+    startStory(scenes.find(scene => scene.dataset.ending === id));
   });
 })();
 /* =========================================
@@ -4485,4 +4597,318 @@ const commonDialoguesRounds = [
 
     /* 啟動光線繪製 */
     requestAnimationFrame(drawTrail);
+})();
+
+/* ==========================================
+   【新增】MP4 開場動畫控制系統
+   ========================================== */
+
+(function initOpeningVideo() {
+
+    /* ======================================
+       【一】取得 HTML 元素
+       ====================================== */
+
+    // 開場動畫容器
+    const openingScreen =
+        document.getElementById("openingScreen");
+
+    // MP4 影片
+    const openingVideo =
+        document.getElementById("openingVideo");
+
+    // 跳過序幕按鈕
+    const skipBtn =
+        document.getElementById("openingSkipBtn");
+
+    // 開啟聲音按鈕
+    const soundBtn =
+        document.getElementById("openingSoundBtn");
+
+    const replayBtn =
+        document.getElementById("openingReplayBtn");
+
+    // 確認必要元素存在
+    if (
+        !openingScreen ||
+        !openingVideo ||
+        !skipBtn ||
+        !soundBtn ||
+        !replayBtn
+    ) {
+        console.error("【開場動畫】缺少影片畫面所需的元素");
+        openingScreen?.remove();
+        return;
+    }
+
+    /* ======================================
+       【二】播放狀態設定
+       ====================================== */
+
+    // 避免重複結束動畫
+    let isFinished = false;
+
+    // 避免重複啟動自動播放
+    let isStarting = false;
+
+    let playbackId = 0;
+
+    // 記錄玩家是否已手動開啟聲音
+    let userEnabledSound = false;
+
+    /* ======================================
+       【三】控制聲音按鈕
+       ====================================== */
+
+    function showSoundButton(text) {
+
+        // 修改按鈕文字
+        soundBtn.textContent = text;
+
+        // 顯示按鈕
+        soundBtn.hidden = false;
+    }
+
+    function hideSoundButton() {
+
+        // 隱藏按鈕
+        soundBtn.hidden = true;
+    }
+
+    /* ======================================
+       【四】優先嘗試有聲自動播放
+       ====================================== */
+
+    async function startOpeningVideo() {
+
+        if (isFinished || isStarting) return;
+
+        isStarting = true;
+        const attempt = playbackId;
+
+        // 優先嘗試有聲播放
+        openingVideo.muted = false;
+        openingVideo.volume = 1;
+
+        try {
+
+            // 嘗試有聲自動播放
+            await openingVideo.play();
+
+            if (isFinished || attempt !== playbackId) return;
+
+            // 播放成功，隱藏聲音按鈕
+            hideSoundButton();
+
+            console.log(
+                "【開場動畫】有聲自動播放成功"
+            );
+
+        } catch (error) {
+
+            if (isFinished || attempt !== playbackId) return;
+
+            console.log(
+                "【開場動畫】有聲播放被阻擋",
+                error
+            );
+
+            /* ==============================
+               【五】改為靜音自動播放
+               ============================== */
+
+            // 玩家尚未手動開啟聲音才靜音
+            if (!userEnabledSound) {
+                openingVideo.muted = true;
+            }
+
+            try {
+
+                // 嘗試靜音播放
+                await openingVideo.play();
+
+                if (isFinished || attempt !== playbackId) return;
+
+                // 如果仍然是靜音
+                if (openingVideo.muted) {
+
+                    // 顯示開啟聲音按鈕
+                    showSoundButton("♫ 開啟聲音");
+                }
+
+                console.log(
+                    "【開場動畫】靜音播放成功"
+                );
+
+            } catch (mutedError) {
+
+                if (isFinished || attempt !== playbackId) return;
+
+                console.error(
+                    "【開場動畫】靜音播放失敗",
+                    mutedError
+                );
+
+                // 顯示手動播放按鈕
+                showSoundButton("▶ 播放影片");
+            }
+        } finally {
+
+            // 結束啟動狀態
+            if (attempt === playbackId) isStarting = false;
+        }
+    }
+
+    /* ======================================
+       【六】手動開啟聲音
+       ====================================== */
+
+    async function enableOpeningSound() {
+
+        if (isFinished) return;
+        const attempt = playbackId;
+
+        // 記錄玩家已手動操作
+        userEnabledSound = true;
+
+        // 取消靜音
+        openingVideo.muted = false;
+
+        // 設定音量
+        openingVideo.volume = 1;
+
+        try {
+
+            // 從目前播放進度繼續
+            await openingVideo.play();
+
+            if (isFinished || attempt !== playbackId) return;
+
+            // 成功後隱藏按鈕
+            hideSoundButton();
+
+            console.log(
+                "【開場動畫】聲音已開啟"
+            );
+
+        } catch (error) {
+
+            if (isFinished || attempt !== playbackId) return;
+
+            console.error(
+                "【開場動畫】開啟聲音失敗",
+                error
+            );
+
+            // 失敗後恢復靜音
+            openingVideo.muted = true;
+
+            // 顯示重試按鈕
+            showSoundButton("♫ 開啟聲音");
+        }
+    }
+
+    /* ======================================
+       【七】結束開場動畫
+       ====================================== */
+
+    function finishOpeningVideo() {
+
+        // 避免重複執行
+        if (isFinished) return;
+
+        isFinished = true;
+        playbackId++;
+        isStarting = false;
+
+        // 停止影片播放
+        openingVideo.pause();
+
+        // 隱藏按鈕
+        skipBtn.hidden = true;
+        hideSoundButton();
+
+        // 啟動淡出動畫
+        openingScreen.classList.add("is-finished");
+
+        // 等待淡出完成
+        setTimeout(() => {
+
+            openingScreen.hidden = true;
+            window.dispatchEvent(new Event("openingVideoFinished"));
+
+        }, 1200);
+    }
+
+    /* ======================================
+       【八】綁定按鈕事件
+       ====================================== */
+
+    // 點擊開啟聲音
+    soundBtn.addEventListener(
+        "click",
+        enableOpeningSound
+    );
+
+    // 點擊跳過序幕
+    skipBtn.addEventListener(
+        "click",
+        finishOpeningVideo
+    );
+
+    replayBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (!isFinished || !openingScreen.hidden) return;
+        isFinished = false;
+        userEnabledSound = false;
+        openingVideo.currentTime = 0;
+        skipBtn.hidden = false;
+        skipBtn.textContent = "跳過序幕 »";
+        hideSoundButton();
+        openingScreen.hidden = false;
+        openingScreen.classList.remove("is-finished");
+        window.dispatchEvent(new Event("openingVideoStarted"));
+        startOpeningVideo();
+    });
+
+    // 影片播放完畢
+    openingVideo.addEventListener(
+        "ended",
+        finishOpeningVideo
+    );
+
+    /* ======================================
+       【九】影片載入錯誤
+       ====================================== */
+
+    openingVideo.addEventListener(
+        "error",
+        () => {
+
+            if (isFinished) return;
+
+            console.error(
+                "【開場動畫】影片載入失敗"
+            );
+
+            // 修改跳過按鈕文字
+            skipBtn.textContent = "進入遊戲 »";
+
+            // 隱藏聲音按鈕
+            hideSoundButton();
+        }
+    );
+
+    /* ======================================
+       【十】進入網頁後自動播放
+       ====================================== */
+
+    if (window.location.hash === "#return-to-intro") {
+        history.replaceState(history.state, "", window.location.pathname + window.location.search);
+        isFinished = true;
+        openingScreen.hidden = true;
+    } else {
+        startOpeningVideo();
+    }
+
 })();
