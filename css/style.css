@@ -4542,7 +4542,7 @@ body {
   color: #f4f5fc;
   font: 400 clamp(16px, 1.8vw, 23px)/1.8 "Noto Serif TC", "PMingLiU", serif;
   letter-spacing: .12em;
-  text-align: center;
+  text-align: right; /* 文字靠右對齊 */
   white-space: pre-line;
   pointer-events: none;
 }

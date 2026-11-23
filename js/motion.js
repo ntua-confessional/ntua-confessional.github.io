@@ -1,4 +1,4 @@
-// 新增 Web Audio 音效時，請使用 context 並將音源連接至 output。
+// 新增 Web Audio 音效時，請使用 context 並將音源連接至 output
 const gameAudio = (() => {
   const slider = document.getElementById("sfxVolume");
   const status = document.getElementById("soundStatus");
@@ -20,7 +20,7 @@ const gameAudio = (() => {
     output = newOutput;
   }
 
-  // 瀏覽器通常要求先有使用者操作，才能啟動音訊。
+  // 瀏覽器通常要求先有使用者操作，才能啟動音訊
   function startDefaultAudio() {
     window.removeEventListener("pointerdown", startDefaultAudio, true);
     window.removeEventListener("keydown", startDefaultAudio, true);
@@ -46,7 +46,7 @@ const gameAudio = (() => {
     console.error("無法啟用音效", error);
     if (volume === 0) return;
     failed = true;
-    status.textContent = "無法啟用音效，請調整音量重試。";
+    status.textContent = "無法啟用音效，請調整音量重試";
     status.hidden = false;
   }
 
@@ -96,7 +96,7 @@ const gameAudio = (() => {
   function reportStorageError(error) {
     console.warn("無法讀取或儲存音量設定", error);
     storageAvailable = false;
-    storageStatus.textContent = "無法儲存音量設定，本次遊戲仍可調整音量。";
+    storageStatus.textContent = "無法儲存音量設定，本次遊戲仍可調整音量";
     storageStatus.hidden = false;
   }
 
@@ -197,7 +197,7 @@ const gameAudio = (() => {
 
   function reportMusicError(error) {
     console.error("無法播放背景音樂", error);
-    musicStatus.textContent = "無法播放背景音樂，請點擊畫面重試。";
+    musicStatus.textContent = "無法播放背景音樂，請點擊畫面重試";
     musicStatus.hidden = false;
   }
 
@@ -301,7 +301,7 @@ const gameAudio = (() => {
 const sfxTargetRms = 0.01;
 
 function normalizedToneScale(peak, tail, wave) {
-  // Web Audio 的鋸齒波與方波會經過週期波峰值正規化。
+  // Web Audio 的鋸齒波與方波會經過週期波峰值正規化
   const waveRms = wave === "sine" ? Math.SQRT1_2 : wave === "square" ? 0.85 :
     wave === "sawtooth" ? Math.sqrt(1 / 3) * 0.85 : Math.sqrt(1 / 3);
   const envelopeRms = Math.sqrt((peak * peak - tail * tail) / (2 * Math.log(peak / tail)));
@@ -329,7 +329,7 @@ function playTypingSound(character, index) {
 }
 
 const gameSfx = (() => {
-  // 頻率以 Hz、時間以秒表示；可直接調整各音效的音高、長度、音量和延遲。
+  // 頻率以 Hz、時間以秒表示；可直接調整各音效的音高、長度、音量和延遲
   const tone = (frequency, endFrequency, duration, gain, delay = 0, wave = "sine", attack = 0.005) =>
     ({ kind: "tone", frequency, endFrequency, duration, gain, delay, wave, attack });
   const noise = (frequency, endFrequency, duration, gain, delay = 0, filter = "bandpass", attack = 0.005) =>
@@ -442,7 +442,7 @@ const gameSfx = (() => {
       noise(500, 300, 1.45, 0.025, 0.05, "lowpass", 0.15),
     ],
   };
-  // 各音效完整播放期間的 RMS；修改聲音組成後需重新測量。
+  // 各音效完整播放期間的 RMS；修改聲音組成後需重新測量
   const soundRms = {
     "match-ignite": 0.01527,
     "character-lock": 0.01021,
@@ -660,7 +660,7 @@ function createCandleController(container, total, interval) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 開場至警告頁：快取節點、管理場景狀態與共用動畫計時器。
+  // 開場至警告頁：快取節點、管理場景狀態與共用動畫計時器
   const introScene = document.getElementById("introScene");
   const logoSvg = document.getElementById("logoSvg");
   const candelSvg = document.getElementById("candelSvg");
@@ -747,7 +747,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let isTypingStory = false;
   let storyTimer = null;
 
-  // 警告頁：依燭火位置產生星火，並支援視窗調整與滑鼠風向。
+  // 警告頁：依燭火位置產生星火，並支援視窗調整與滑鼠風向
   const sparksController = (() => {
     if (!warningSparksCanvas) {
       return { start() {}, stop() {} };
@@ -909,7 +909,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   })();
 
-  // 前情提要：將文字拆成逐字動畫節點，並控制播放、跳過與重設。
+  // 前情提要：將文字拆成逐字動畫節點，並控制播放、跳過與重設
   function prepareBriefingTypewriter() {
     const blocks = [briefingStory, briefingGoal, briefingReminder].filter(
       Boolean,
@@ -1009,7 +1009,7 @@ document.addEventListener("DOMContentLoaded", () => {
     timers.push(setTimeout(typeNextChar, 450));
   }
 
-  // 前情提要與背景素材：初始化視差效果，並在圖片載入失敗時依序嘗試備援。
+  // 前情提要與背景素材：初始化視差效果，並在圖片載入失敗時依序嘗試備援
   if (memoParallaxScene && typeof Parallax !== "undefined") {
     memoParallaxInstance = new Parallax(memoParallaxScene, {
       relativeInput: true,
@@ -1071,7 +1071,7 @@ document.addEventListener("DOMContentLoaded", () => {
     timers = [];
   }
 
-  // 場景流程：統一重設狀態，並依序切換角色、前情提要、教學與警告頁。
+  // 場景流程：統一重設狀態，並依序切換角色、前情提要、教學與警告頁
   function resetIntro() {
     clearTimers();
     clearTimeout(storyTimer);
@@ -1445,7 +1445,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 第五頁：進入特殊環節操作教學。
+  // 第五頁：進入特殊環節操作教學
   function enterSpecialHowToPage() {
     if (!howToPlayScene || !howToPlayScene.classList.contains("is-active"))
       return;
@@ -1465,7 +1465,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 特殊環節教學後進入第六頁警告畫面並啟動星火動畫。
+  // 特殊環節教學後進入第六頁警告畫面並啟動星火動畫
   function enterWarningPage() {
     if (isEnteringWarning || !specialHowToScene.classList.contains("is-active"))
       return;
@@ -1485,7 +1485,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 等影片畫面淡出後才開始第一頁動畫。
+  // 等影片畫面淡出後才開始第一頁動畫
   function startIntroAfterVideo() {
     introScene.inert = false;
     playIntroSequence();
@@ -1603,7 +1603,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 第一次點擊顯示全部內容，之後點擊提示進入下一頁。
+  // 第一次點擊顯示全部內容，之後點擊提示進入下一頁
   function bindTutorialScene(scene, prompt, advance) {
     if (!scene) return;
     scene.addEventListener("click", (e) => {
@@ -1633,7 +1633,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // 題目互動：快取頁面節點，並共用樣板建立記分板與心跳畫面的燭火。
+  // 題目互動：快取頁面節點，並共用樣板建立記分板與心跳畫面的燭火
 
   // 第七頁的整體場景
   const questionScene = document.getElementById("questionScene");
@@ -1723,7 +1723,7 @@ document.addEventListener("DOMContentLoaded", () => {
     new ResizeObserver(syncQuestionDialogueBounds).observe(questionChoicePanel);
   }
 
-  // 題目流程：保存題目索引、對話進度、答案、扣分與防重複點擊狀態。
+  // 題目流程：保存題目索引、對話進度、答案、扣分與防重複點擊狀態
 
   // 目前題目索引，0 代表第一題
   let questionIndex = 0;
@@ -1749,9 +1749,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let hasTriggeredRhythmEvent = false;
   let hasTriggeredExcuseEvent = false;
 
-  // safeChoiceIndex 為唯一不扣分的選項（從 0 開始）；choiceKeywords 可指定填入空格的文字。
-  // choiceHints 依選項順序填寫；空字串不顯示提示。
-  // 答案、新增題目、獨白與答題後文案皆為暫定內容。
+  // safeChoiceIndex 為唯一不扣分的選項（從 0 開始）；choiceKeywords 可指定填入空格的文字
+  // choiceHints 依選項順序填寫；空字串不顯示提示
+  // 答案、新增題目、獨白與答題後文案皆為暫定內容
 
   const questionData = [
     //  第一題
@@ -1816,7 +1816,7 @@ document.addEventListener("DOMContentLoaded", () => {
           { side: "left", text: "畢竟接連發生了數起命案。"},
           { side: "right", text: "是啊。"},
           { side: "right", text: "不過，那些死者似乎都不是甚麼值得同情的人。"},
-          { side: "left", text: "死亡不應該成為衡量一個人是否值得同情的標準"},
+          { side: "left", text: "死亡不應該成為衡量一個人是否值得同情的標準。"},
           { side: "right", text: "您說的對。"}
         ],
       },
@@ -1839,7 +1839,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         {
           side: "right",
-          text: "我跟奈克相談甚歡，後來便去了酒吧",
+          text: "我跟奈克相談甚歡，後來便去了酒吧。",
         },
         {
           side: "right",
@@ -2065,7 +2065,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     },
 
-    // 第六至第九題的題目、答案與文案可依最終劇情調整。
+    // 第六至第九題的題目、答案與文案可依最終劇情調整
     //第六題
     {
       dialogues: [
@@ -2110,7 +2110,7 @@ document.addEventListener("DOMContentLoaded", () => {
         safe: [{ side: "left", text: "看起來只是一些生意上的煩惱。"},
          { side: "right", text: "畢竟最近鎮上不太平，難免讓人多想。" }
         ],
-        penalty: [{ side: "left", text: "這些聽起來，似乎不是應該聲張的東西" },
+        penalty: [{ side: "left", text: "這些聽起來，似乎不是應該聲張的東西。" },
          { side: "right", text: "都是些聽來的、空穴來風的傳聞。" }
         ],
         common: [{ side: "left", text: "流言終究只是流言。" },
@@ -2217,7 +2217,7 @@ document.addEventListener("DOMContentLoaded", () => {
         { 
           side: "right",
           type: "thought",
-          text: "「幾年前的那件事……您真的已經忘記了嗎？」"
+          text: "「幾年前的那件事……您真的已經忘記了嗎」"
         },
         { 
           side: "right", 
@@ -2233,7 +2233,7 @@ document.addEventListener("DOMContentLoaded", () => {
           { side: "left", text: "或許只有當事人自己知道。" }
         ],
         penalty: [{ side: "left", text: "……你為何會想到這樣的事情？" },
-          { side: "right", text: " 只是些突發奇想的假設" },
+          { side: "right", text: " 只是些突發奇想的假設。" },
           { side: "left", text: "有些假設，未免太過具體。" },
         ],
         common: [{ side: "left", text: "為何突然問起這些？" },
@@ -2308,7 +2308,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   ];
 
-  // 清理題目延遲動畫，避免換題後舊計時器繼續更新畫面。
+  // 清理題目延遲動畫，避免換題後舊計時器繼續更新畫面
   function clearQuestionTimers() {
     questionTimers.forEach(clearTimeout);
 
@@ -2439,7 +2439,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 顯示題目、更新選項，並播放第一段對話。
+  // 顯示題目、更新選項，並播放第一段對話
   function renderQuestion() {
     // 清除上一題尚未執行的動畫
     clearQuestionTimers();
@@ -2486,7 +2486,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 從警告頁初始化並進入題目互動。
+  // 從警告頁初始化並進入題目互動
   function enterQuestionScene() {
     // 如果找不到第七頁，停止執行
     if (!questionScene) return;
@@ -2545,7 +2545,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 玩家作答、處理扣分與特殊環節分支。
+  // 玩家作答、處理扣分與特殊環節分支
   function finishQuestionnaire() {
     clearQuestionTimers();
     questionLocked = true;
@@ -2699,7 +2699,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 題目與對話推進的事件綁定。
+  // 題目與對話推進的事件綁定
   questionButtons.forEach((button, index) => {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -2733,7 +2733,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 
-// 心跳檢定：控制對話、音效、節奏判定、燭火結果與角色素材。
+// 心跳檢定：控制對話、音效、節奏判定、燭火結果與角色素材
 document.addEventListener("DOMContentLoaded", () => {
   const rhythmScene = document.getElementById("rhythmScene");
   const rhythmIntroScene = document.getElementById("rhythmIntroScene");
@@ -3325,17 +3325,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         typewriter.start(
           rhythmDialogueText,
-          "「……看來只是我多心了。願主寬恕你的不安。」",
+          "「……看來只是我多心了，願主寬恕你的不安。」",
           44,
         );
         if (rhythmInstructionText) {
           typewriter.start(
             rhythmInstructionText,
-            "瞞過神父。",
+            "瞞過神父",
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "點擊繼續";
+                rhythmActionBtn.textContent = "點擊繼續 ▾";
                 rhythmActionBtn.dataset.outcome = "success";
                 rhythmActionBtn.disabled = false;
                 rhythmActionBtn.hidden = false;
@@ -3375,11 +3375,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (rhythmInstructionText) {
           typewriter.start(
             rhythmInstructionText,
-            `檢定失敗（${failReason}），繼續告解。`,
+            `檢定失敗（${failReason}），繼續告解`,
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "回到告解";
+                rhythmActionBtn.textContent = "回到告解 ▸";
                 rhythmActionBtn.dataset.outcome = "failure";
                 rhythmActionBtn.disabled = false;
                 rhythmActionBtn.hidden = false;
@@ -3443,7 +3443,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (rhythmActionBtn) rhythmActionBtn.hidden = true;
         if (rhythmInstructionText) {
           rhythmInstructionText.textContent =
-            "心電圖亮點進入較亮區域時，按空白鍵。";
+            "心電圖亮點進入較亮區域時，按空白鍵";
         }
 
         stepTimers.push(setTimeout(() => startWaveSweep(), 380));
@@ -3627,7 +3627,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const typewriter = createTypewriter(42, 115);
 
-  // 狡辯計時與本環節的燭火顯示。
+  // 狡辯計時與本環節的燭火顯示
   const TOTAL_CANDLES = 7;
   const PASS_EXTINGUISH_COUNT = 5; // 過：五根蠟燭熄滅
   const FAIL_EXTINGUISH_COUNT = 6; // 沒過：六根蠟燭熄滅
@@ -3644,7 +3644,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastFrameTime = 0;
   let transitionTimers = [];
 
-  // 四題為共用題庫，每次狡辯從中隨機抽取兩題。
+  // 四題為共用題庫，每次狡辯從中隨機抽取兩題
   /* =========================================
    【新增】狡辯環節固定開場對話
 
@@ -3953,7 +3953,7 @@ const commonDialoguesRounds = [
         // 本題單字全部打出
         stopCountdown();
         if (currentRoundIndex < rounds.length - 1) {
-          // 進入下一題狡辯對話。
+          // 進入下一題狡辯對話
           phase = "transition";
           playTone(659.25, 0.25, "triangle", 0.18, 1.12);
           showFeedbackBanner("完美通過，準備下一句狡辯！", true);
@@ -3992,7 +3992,7 @@ const commonDialoguesRounds = [
     }
   }
 
-  // 通過不扣分，失敗扣一根燭火。
+  // 通過不扣分，失敗扣一根燭火
   function finishBranch(isPassed) {
     phase = "result";
     stopCountdown();
@@ -4010,7 +4010,7 @@ const commonDialoguesRounds = [
       });
 
       if (typingStatusBadge) {
-        typingStatusBadge.textContent = "狡辯成功。";
+        typingStatusBadge.textContent = "狡辯成功";
       }
       if (excuseActionBtn) {
         excuseActionBtn.textContent = "繼續告解";
@@ -4040,7 +4040,7 @@ const commonDialoguesRounds = [
     );
 
       if (typingStatusBadge) {
-        typingStatusBadge.textContent = "狡辯失敗。";
+        typingStatusBadge.textContent = "狡辯失敗";
       }
       if (excuseActionBtn) {
         excuseActionBtn.textContent = "繼續告解";
@@ -4161,7 +4161,7 @@ const commonDialoguesRounds = [
         { speaker: '你', text: '……呵' },
         { speaker: '你', text: '真是令人失望啊，神父' }
       ],
-      result: '結局一：信任崩解。'
+      result: '結局一：信任崩解'
     },
     escape: {
       lines: [
@@ -4174,7 +4174,7 @@ const commonDialoguesRounds = [
         { speaker: '你', text: '願長夜與您相伴，神父' },
         { speaker: '神父', text: '……願長夜與您同在' }
       ],
-      result: '結局二：逃離告解室。'
+      result: '結局二：逃離告解室'
     },
     concealed: {
       lines: [
@@ -4188,7 +4188,7 @@ const commonDialoguesRounds = [
         { speaker: '你', text: '歡迎您成為我的刀下亡魂' },
         { speaker: '你', text: '……我親愛的神父' }
       ],
-      result: '結局三：無人識破。'
+      result: '結局三：無人識破'
     }
   };
 
@@ -4296,7 +4296,7 @@ const commonDialoguesRounds = [
       });
     } else {
       at(900, 600, () => { activeScene.dataset.dialogueStep = '1'; });
-      showCaption('一切如同計畫一般。', () => {
+      showCaption('一切如同計畫一般', () => {
         at(1200, 800, () => {
           activeScene.dataset.dialogueStep = '2';
           showCaption('狼影浮現，祕密仍未被識破', () => {
