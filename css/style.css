@@ -37,28 +37,6 @@ body {
     pointer-events: auto;
 }
 
-.opening-replay-btn {
-    position: fixed;
-    top: 24px;
-    right: 180px;
-    min-height: 54px;
-    padding: 0 20px;
-    border: 1px solid #c7c0df;
-    background: rgba(18, 15, 23, 0.5);
-    color: #eee7ef;
-    font: 400 18px/1 "PingFang TC", "Microsoft JhengHei", sans-serif;
-    letter-spacing: 2px;
-    white-space: nowrap;
-    cursor: pointer;
-}
-
-.opening-replay-btn:hover { background: rgba(69, 58, 76, 0.5); }
-.opening-replay-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-.intro-scene:not(.is-active) .opening-replay-btn { visibility: hidden; }
-@media (max-width: 650px) {
-    .opening-replay-btn { top: 12px; right: 164px; }
-}
-
 .scene {
     position: relative;
     width: min(76vw, 900px);
@@ -2867,10 +2845,10 @@ body {
   min-height: clamp(96px, 13.5vh, 138px);
   padding: clamp(18px, 2.3vh, 26px) clamp(30px, 3.6vw, 50px);
   text-align: left;
-  background-color: #656ca6;
-  border: 1px solid rgba(188, 194, 245, 0.35);
-  border-radius: 8px;
-  box-shadow: 0 10px 26px rgba(10, 10, 34, 0.42);
+  background: rgba(105, 111, 172, 0.5);
+  border: 0;
+  border-radius: 18px;
+  border-bottom-left-radius: 5px;
   opacity: 0;
   transform: translateY(-10px);
   transition:
@@ -2883,15 +2861,23 @@ body {
   transform: translateY(0);
 }
 
+.rhythm-intro-dialogue-box .dialogue-next-hint {
+  position: absolute;
+  left: clamp(30px, 3.6vw, 50px);
+  bottom: 8px;
+  margin: 0;
+}
+
 .rhythm-intro-dialogue-box::before {
   content: "";
   position: absolute;
-  left: -16px;
-  bottom: 0;
+  left: -12px;
+  bottom: 3px;
   width: 0;
   height: 0;
-  border-bottom: 16px solid #656ca6;
-  border-left: 18px solid transparent;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-right: 12px solid rgba(105, 111, 172, 0.5);
 }
 
 .rhythm-intro-dialogue-text {
@@ -3031,6 +3017,277 @@ body {
   pointer-events: none;
   transition: opacity 0.85s ease;
   overflow: hidden;
+}
+
+/* ========================================
+   【新增】鍵盤提示 UI 整體位置
+======================================== */
+
+.keyboard-hint {
+    position: absolute;
+
+    /* 【保留】控制完整鍵盤的基礎位置 */
+    right: 4%;
+    bottom: 5%;
+
+    /* 【新增】完整鍵盤的額外位移 */
+    translate: -40px -20px;
+
+    /* 【新增】設定縮放基準為右下角 */
+    transform-origin: right bottom;
+
+    z-index: 20;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 12px;
+
+    /* 不阻擋原本遊戲的滑鼠操作 */
+    pointer-events: none;
+}
+
+.rhythm-scene.is-active .keyboard-hint:not(.is-compact) {
+    animation: keyboardHintEntry 3s ease-in-out both;
+}
+
+@keyframes keyboardHintEntry {
+    0%, 66.667% {
+        transform: translate(calc(-46vw + 50%), calc(-45vh + 50%)) scale(2.25);
+    }
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+/* 【修改】精簡鍵盤的專用位置與大小 */
+.keyboard-hint.is-compact {
+    gap: 0;
+
+    /* 【新增】精簡模式的專用位置 */
+    translate: -80px -15px;
+
+    /* 【新增】精簡模式縮小至*/
+    scale: 1;
+
+    /* 【新增】以右下角為縮放基準 */
+    transform-origin: right bottom;
+}
+
+.keyboard-hint.is-compact .keyboard {
+    background: transparent;
+    border-color: transparent;
+}
+
+/* 【修改】隱藏其他按鍵，並移除原本佔據的空間 */
+.keyboard-hint.is-compact .keyboard-row:not(.keyboard-bottom-row) {
+    display: none;
+}
+
+.keyboard-hint.is-compact .keyboard-small,
+.keyboard-hint.is-compact .keyboard-hint-text {
+    display: none;
+}
+
+.keyboard-hint.is-compact .keyboard-bottom-row {
+    margin-top: 0;
+    justify-content: flex-end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rhythm-scene.is-active .keyboard-hint {
+        transform: none;
+    }
+
+    .rhythm-scene.is-active .keyboard-row:not(.keyboard-bottom-row) {
+        visibility: hidden;
+    }
+
+    .rhythm-scene.is-active .keyboard-small,
+    .rhythm-scene.is-active .keyboard-hint-text {
+        display: none;
+    }
+
+    .rhythm-scene.is-active .keyboard-bottom-row {
+        margin-top: 0;
+        justify-content: flex-end;
+    }
+}
+
+
+/* ========================================
+   【新增】鍵盤外框
+======================================== */
+
+.keyboard {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+    padding: 12px;
+
+    background: rgba(35, 31, 42, 0.85);
+
+    border: 1px solid #756d72;
+    border-radius: 8px;
+}
+
+
+/* ========================================
+   【新增】鍵盤每一排
+======================================== */
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+
+/* ========================================
+   【新增】一般按鍵樣式
+======================================== */
+
+.keyboard-row span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    width: 25px;
+    height: 27px;
+
+    background: #38343e;
+
+    border: 1px solid #817a80;
+    border-radius: 3px;
+
+    color: #d0c9c0;
+    font-size: 10px;
+}
+
+
+/* ========================================
+   【新增】最下排按鍵
+======================================== */
+
+.keyboard-bottom-row {
+    margin-top: 3px;
+}
+
+
+/* 左右兩側較寬的功能鍵 */
+.keyboard-row .keyboard-small {
+    width: 39px;
+}
+
+
+/* ========================================
+   【新增】空白鍵特殊樣式
+======================================== */
+
+.keyboard-row .keyboard-space {
+
+    /* 空白鍵寬度 */
+    width: 140px;
+
+    /* 淡金色背景 */
+    background: #a18a5e;
+
+    /* 金色邊框 */
+    border: 1px solid #ead4a2;
+
+    /* SPACE 文字顏色 */
+    color: #211d24;
+
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 2px;
+
+    /* 初始光暈 */
+    box-shadow: 0 0 8px rgba(228, 199, 139, 0.3);
+
+    /* 持續播放放大縮小動畫 */
+    animation: spaceKeyPulse 1.9s ease-in-out infinite;
+}
+
+
+/* ========================================
+   【新增】空白鍵呼吸動畫
+======================================== */
+
+@keyframes spaceKeyPulse {
+
+    /* 原始大小 */
+    0%, 100% {
+        transform: scale(1);
+
+        box-shadow:
+            0 0 5px rgba(228, 199, 139, 0.2);
+    }
+
+    /* 稍微放大並增強光暈 */
+    50% {
+        transform: scale(1.065);
+
+        box-shadow:
+            0 0 16px rgba(228, 199, 139, 0.6);
+    }
+}
+
+
+/* ========================================
+   【新增】下方操作提示文字
+======================================== */
+
+.keyboard-hint-text {
+    margin: 0;
+
+    color: #d8c6a5;
+
+    font-family: "Noto Serif TC", "PMingLiU", serif;
+    font-size: 13px;
+
+    letter-spacing: 3px;
+    text-align: center;
+}
+
+
+/* ========================================
+   【新增】小螢幕自適應
+======================================== */
+
+@media (max-width: 410px) {
+
+    .keyboard {
+        gap: 3px;
+        padding: 7px;
+    }
+
+    .keyboard-row {
+        gap: 3px;
+    }
+
+    .keyboard-row span {
+        width: 19px;
+        height: 23px;
+    }
+
+    .keyboard-row .keyboard-small {
+        width: 29px;
+    }
+
+    .keyboard-row .keyboard-space {
+        width: 96px;
+        font-size: 8px;
+    }
+
+    .keyboard-hint-text {
+        font-size: 11px;
+        letter-spacing: 1px;
+    }
 }
 
 .rhythm-scene.is-active {
@@ -3506,6 +3763,42 @@ body {
 .rhythm-character-img.is-black-bg {
   mix-blend-mode: lighten;
   filter: contrast(1.06) brightness(1.05);
+}
+
+.rhythm-heart {
+  position: absolute;
+  z-index: 1;
+  top: 23%;
+  left: 40%;
+  width: 29%;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(210, 26, 42, 0.4));
+}
+
+.rhythm-scene.is-heartbeat-active .rhythm-heart {
+  animation: rhythmHeartBeat 0.86s ease-in-out infinite;
+}
+
+.rhythm-scene.is-heartbeat-failed .rhythm-heart {
+  animation: rhythmHeartBeatFailed 0.48s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(255, 24, 38, 0.75));
+}
+
+@keyframes rhythmHeartBeat {
+  0%, 100% { transform: scale(1); }
+  13% { transform: scale(1.18); }
+  25% { transform: scale(1.06); }
+  38% { transform: scale(1.14); }
+  52% { transform: scale(1); }
+}
+
+@keyframes rhythmHeartBeatFailed {
+  0%, 100% { transform: scale(1); }
+  12% { transform: scale(1.42); }
+  25% { transform: scale(1.12); }
+  38% { transform: scale(1.32); }
+  52% { transform: scale(1); }
 }
 
 /* =========================================
@@ -4471,7 +4764,13 @@ body {
   align-items: center;
   gap: 16px;
   padding: clamp(44px, 10svh, 108px) clamp(24px, 8vw, 120px) clamp(30px, 8svh, 86px);
-  background: inherit;
+  background-color: #24235b;
+  background-image:
+    linear-gradient(rgba(36, 35, 91, .42), rgba(36, 35, 91, .58)),
+    url("../images/bg/F_shadow.png");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   color: #f4f5fc;
   font-family: "Noto Serif TC", "PMingLiU", serif;
   text-align: center;
@@ -4583,139 +4882,6 @@ body {
 .verdict.is-visible{opacity:1;visibility:visible}.eyebrow{font-size:12px;letter-spacing:.35em;color:#b1a4ce}.verdict h1{font-size:clamp(25px,4vw,54px);font-weight:400;letter-spacing:.16em;margin:20px 0}.verdict-copy{color:#c2bed0;font-size:14px;line-height:2.2;letter-spacing:.12em}
 .verdict .ending-actions button{border:1px solid #c7bdd752;background:#24233d9c;border-radius:30px;padding:10px 22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 
-:root {
-  --audio-line: #c7c0df;
-  --audio-line-dark: #766c7c;
-  --audio-bg: rgba(18, 15, 23, 0.97);
-  --audio-text: #eee7ef;
-}
-
-.audio-settings-trigger {
-  position: fixed;
-  top: 24px;
-  right: 28px;
-  z-index: 1001;
-  min-height: 54px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  isolation: isolate;
-  gap: 12px;
-  padding: 0 24px;
-  background: transparent;
-  border: 0;
-  color: var(--audio-text);
-  font: 400 20px/1 "PingFang TC", "Microsoft JhengHei", sans-serif;
-  letter-spacing: 2px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.audio-settings-trigger::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: rgba(18, 15, 23, 0.5);
-  border: 1px solid var(--audio-line);
-  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px,
-    100% calc(100% - 10px), calc(100% - 10px) 100%,
-    10px 100%, 0 calc(100% - 10px), 0 10px);
-  transition: background 0.25s;
-}
-.audio-settings-trigger svg { width: 22px; height: 22px; flex: none; }
-.audio-settings-trigger:hover::before { background: rgba(69, 58, 76, 0.3); }
-
-.audio-settings-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-}
-
-.audio-settings-backdrop[hidden] { display: none; }
-
-.audio-settings-panel {
-  position: fixed;
-  top: 85px;
-  right: 28px;
-  z-index: 1000;
-  width: min(360px, calc(100vw - 32px));
-  max-height: calc(100vh - 100px);
-  box-sizing: border-box;
-  overflow-y: auto;
-  padding: 28px 30px;
-  background: var(--audio-bg);
-  color: var(--audio-text);
-  border: 1px solid var(--audio-line);
-  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px,
-    100% calc(100% - 16px), calc(100% - 16px) 100%,
-    16px 100%, 0 calc(100% - 16px), 0 16px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
-  animation: audioPanelEnter 0.25s ease;
-}
-
-.audio-settings-panel[hidden], .audio-status[hidden] { display: none; }
-.audio-settings-title { display: flex; align-items: center; justify-content: center; gap: 20px; padding-bottom: 15px; margin-bottom: 24px; border-bottom: 1px solid var(--audio-line-dark); }
-.audio-settings-title h2 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: 4px; }
-.audio-settings-title span { color: var(--audio-line); }
-.audio-control-group { margin-bottom: 26px; }
-.audio-control-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.audio-control-heading label { font-size: 16px; letter-spacing: 2px; }
-.audio-control-heading output { font-size: 14px; color: var(--audio-line); font-variant-numeric: tabular-nums; }
-.audio-control-row { display: flex; align-items: center; gap: 14px; }
-.audio-control-row input[type="range"] {
-  flex: 1;
-  min-width: 0;
-  height: 5px;
-  appearance: none;
-  -webkit-appearance: none;
-  background: #514957;
-  border: 1px solid var(--audio-line-dark);
-  border-radius: 0;
-  cursor: pointer;
-}
-.audio-control-row input[type="range"]::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 15px;
-  height: 15px;
-  background: var(--audio-line);
-  border: 1px solid #fff;
-  transform: rotate(45deg);
-}
-.audio-control-row input[type="range"]::-moz-range-thumb {
-  width: 13px;
-  height: 13px;
-  background: var(--audio-line);
-  border: 1px solid #fff;
-  border-radius: 0;
-  transform: rotate(45deg);
-}
-.audio-control-row input:disabled { opacity: .5; cursor: default; }
-.audio-mute-button {
-  width: 38px;
-  height: 38px;
-  background: transparent;
-  border: 1px solid var(--audio-line-dark);
-  color: var(--audio-text);
-  font-size: 20px;
-  cursor: pointer;
-}
-.audio-mute-button:hover { background: #453a4c; }
-.audio-mute-button.is-muted { color: #77707d; border-color: #5d5562; }
-.audio-settings-trigger:focus-visible, .audio-mute-button:focus-visible,
-.audio-control-row input:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 3px;
-}
-.audio-notices { position: fixed; top: 24px; right: 204px; z-index: 1002; width: min(300px, calc(100vw - 228px)); pointer-events: none; }
-.audio-status { margin: 0 0 4px; padding: 8px 12px; background: var(--audio-bg); border: 1px solid var(--audio-line-dark); color: #ffe0e0; font-size: 13px; line-height: 1.5; }
-@keyframes audioPanelEnter { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-@media(max-width:650px) {
-  .audio-settings-trigger { top: 12px; right: 12px; }
-  .audio-settings-panel { top: 70px; right: 12px; max-height: calc(100vh - 82px); padding: 24px 20px; }
-  .audio-notices { top: 12px; right: 188px; width: min(300px, calc(100vw - 212px)); }
-}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 
 @keyframes portraitIn{from{opacity:0;transform:scale(1.12)}to{opacity:1;transform:scale(1.045)}}
@@ -5098,110 +5264,46 @@ html,
     background: #000;
 }
 
-/* ==========================================
-   【新增】跳過序幕按鈕
-   ========================================== */
-
-.opening-skip-btn {
-    position: absolute;
-    z-index: 3;
-
-    top: 5%;
-    right: 5%;
-
-    padding: 12px 24px;
-
-    border: 1px solid #b59c73;
-    border-radius: 4px;
-
-    background: rgba(15, 12, 22, 0.75);
-    color: #e3d5b7;
-
-    font-size: 16px;
-    letter-spacing: 2px;
-
-    cursor: pointer;
-
-    transition:
-        background 0.3s ease,
-        color 0.3s ease,
-        box-shadow 0.3s ease;
-}
-
-/* 【功能】滑鼠移入效果 */
-.opening-skip-btn:hover {
-    background: #b59c73;
-    color: #17131d;
-
-    box-shadow:
-        0 0 18px rgba(181, 156, 115, 0.35);
-}
-
-/* ==========================================
-   【新增】開啟聲音按鈕
-   ========================================== */
-
 .opening-sound-btn {
     position: absolute;
     z-index: 3;
 
     right: 5%;
-    bottom: 7%;
+    bottom: 5%;
 
-    padding: 14px 28px;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
 
-    border: 1px solid #b59c73;
-    border-radius: 4px;
-
-    background: rgba(15, 12, 22, 0.85);
+    border: 0;
+    background: transparent;
     color: #e3d5b7;
 
-    font-size: 17px;
-    letter-spacing: 2px;
-
     cursor: pointer;
-
-    /* 持續柔和發光 */
-    animation:
-        openingSoundGlow 2s ease-in-out infinite;
-}
-
-/* 【功能】滑鼠移入效果 */
-.opening-sound-btn:hover {
-    background: #b59c73;
-    color: #17131d;
-}
-
-.opening-skip-btn,
-.opening-sound-btn {
     opacity: var(--opening-controls-opacity, 1);
 }
 
+.opening-sound-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.opening-sound-btn:not(.is-muted) .sound-muted-icon,
+.opening-sound-btn.is-muted .sound-on-icon {
+    display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .opening-skip-btn,
     .opening-sound-btn {
         opacity: 1;
     }
 }
 
 /* 【功能】確保 hidden 屬性生效 */
-.opening-sound-btn[hidden],
-.opening-skip-btn[hidden] {
+.opening-sound-btn[hidden] {
     display: none;
-}
-
-/* 【功能】聲音按鈕光暈動畫 */
-@keyframes openingSoundGlow {
-
-    0%, 100% {
-        box-shadow:
-            0 0 5px rgba(181, 156, 115, 0.2);
-    }
-
-    50% {
-        box-shadow:
-            0 0 20px rgba(181, 156, 115, 0.65);
-    }
 }
 
 /* ==========================================
@@ -5228,19 +5330,8 @@ html,
 
 @media (max-width: 650px) {
 
-    .opening-skip-btn {
-        top: 4%;
-        right: 4%;
-
-        padding: 10px 16px;
-        font-size: 13px;
-    }
-
     .opening-sound-btn {
         right: 4%;
-        bottom: 5%;
-
-        padding: 12px 18px;
-        font-size: 14px;
+        bottom: 4%;
     }
 }

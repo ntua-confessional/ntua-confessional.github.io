@@ -1,12 +1,9 @@
 // 新增 Web Audio 音效時，請使用 context 並將音源連接至 output
 const gameAudio = (() => {
-  const slider = document.getElementById("sfxVolume");
-  const status = document.getElementById("soundStatus");
   let context = null;
   let output = null;
-  let volume = Number(slider.value) / 100;
+  const volume = 1.15;
   let failed = false;
-  let interacted = false;
 
   function createAudio() {
     if (context) return;
@@ -22,20 +19,17 @@ const gameAudio = (() => {
 
   // 瀏覽器通常要求先有使用者操作，才能啟動音訊
   function startDefaultAudio() {
-    window.removeEventListener("pointerdown", startDefaultAudio, true);
-    window.removeEventListener("keydown", startDefaultAudio, true);
-    interacted = true;
     activateAudio();
   }
 
   function activateAudio() {
-    if (volume === 0) return;
     try {
       createAudio();
       context.resume().then(() => {
         if (context.state !== "running") throw new Error("Audio context did not resume");
         failed = false;
-        status.hidden = true;
+        window.removeEventListener("pointerdown", startDefaultAudio, true);
+        window.removeEventListener("keydown", startDefaultAudio, true);
       }).catch(reportStartError);
     } catch (error) {
       reportStartError(error);
@@ -44,29 +38,17 @@ const gameAudio = (() => {
 
   function reportStartError(error) {
     console.error("無法啟用音效", error);
-    if (volume === 0) return;
     failed = true;
-    status.textContent = "無法啟用音效，請調整音量重試";
-    status.hidden = false;
   }
 
   window.addEventListener("pointerdown", startDefaultAudio, true);
   window.addEventListener("keydown", startDefaultAudio, true);
 
   return {
-    get context() { return volume > 0 && !failed ? context : null; },
+    get context() { return !failed ? context : null; },
     get output() { return output; },
-    setVolume(value) {
-      volume = value;
-      if (output) output.gain.setValueAtTime(volume, context.currentTime);
-      if (volume === 0) {
-        status.hidden = true;
-      } else if (interacted && (!context || context.state !== "running" || failed)) {
-        activateAudio();
-      }
-    },
     resume() {
-      if (volume > 0 && context && context.state === "suspended") {
+      if (context && context.state === "suspended") {
         activateAudio();
       }
     },
@@ -74,143 +56,36 @@ const gameAudio = (() => {
 })();
 
 (() => {
-  const controls = document.getElementById("audioControls");
   const music = document.getElementById("backgroundMusic");
-  const musicStatus = document.getElementById("musicStatus");
-  const storageStatus = document.getElementById("audioStorageStatus");
-  const trigger = document.getElementById("audioSettingsTrigger");
-  const panel = document.getElementById("audioSettingsPanel");
-  const backdrop = document.getElementById("audioSettingsBackdrop");
-  const bgmSlider = document.getElementById("bgmVolume");
-  const sfxSlider = document.getElementById("sfxVolume");
-  const bgmValue = document.getElementById("bgmVolumeValue");
-  const sfxValue = document.getElementById("sfxVolumeValue");
-  const bgmMute = document.getElementById("bgmMute");
-  const sfxMute = document.getElementById("sfxMute");
+  const openingScreen = document.getElementById("openingScreen");
+  music.volume = 0.1;
   let musicStarting = false;
   let musicRequested = false;
   let localFallbackAttempted = false;
   let localFallbackLoading = false;
-  let storageAvailable = true;
-
-  function reportStorageError(error) {
-    console.warn("無法讀取或儲存音量設定", error);
-    storageAvailable = false;
-    storageStatus.textContent = "無法儲存音量設定，本次遊戲仍可調整音量";
-    storageStatus.hidden = false;
-  }
-
-  function readSetting(key) {
-    if (!storageAvailable) return null;
-    try {
-      return localStorage.getItem(key);
-    } catch (error) {
-      reportStorageError(error);
-      return null;
-    }
-  }
-
-  function saveSetting(key, value) {
-    if (!storageAvailable) return;
-    try {
-      localStorage.setItem(key, String(value));
-    } catch (error) {
-      reportStorageError(error);
-    }
-  }
-
-  function readVolume(key, fallback) {
-    const saved = readSetting(key);
-    if (saved === null) return fallback;
-    const value = Number(saved);
-    if (!saved.trim() || !Number.isFinite(value)) {
-      console.warn("無效的音量設定", key, saved);
-      return fallback;
-    }
-    if (value < 0 || value > 100) {
-      console.warn("音量設定超出範圍", key, saved);
-    }
-    return Math.round(Math.max(0, Math.min(100, value)));
-  }
-
-  function readMuted(key) {
-    const saved = readSetting(key);
-    if (saved === null || saved === "false") return false;
-    if (saved === "true") return true;
-    console.warn("無效的靜音設定", key, saved);
-    return false;
-  }
-
-  const settings = {
-    bgm: readVolume("gameBgmVolume", 10),
-    sfx: readVolume("gameSfxVolume", 80),
-    bgmMuted: readMuted("gameBgmMuted"),
-    sfxMuted: readMuted("gameSfxMuted"),
-  };
-  const bgmTracks = new Set([music]);
-  const sfxTracks = new Set();
-
-  function getVolume(type) {
-    if (type !== "bgm" && type !== "sfx") throw new Error("未知音訊類型：" + type);
-    return settings[type + "Muted"] ? 0 : settings[type] / 100;
-  }
-
-  function applyVolumes() {
-    bgmTracks.forEach((audio) => { audio.volume = getVolume("bgm") * 0.5; });
-    sfxTracks.forEach((audio) => { audio.volume = getVolume("sfx"); });
-    gameAudio.setVolume(getVolume("sfx") * 1.5);
-  }
-
-  function updateUI() {
-    bgmSlider.value = settings.bgm;
-    sfxSlider.value = settings.sfx;
-    bgmValue.textContent = `${settings.bgmMuted ? 0 : settings.bgm}%`;
-    sfxValue.textContent = `${settings.sfxMuted ? 0 : settings.sfx}%`;
-    bgmSlider.disabled = settings.bgmMuted;
-    sfxSlider.disabled = settings.sfxMuted;
-    bgmMute.classList.toggle("is-muted", settings.bgmMuted);
-    sfxMute.classList.toggle("is-muted", settings.sfxMuted);
-    bgmMute.setAttribute("aria-pressed", String(settings.bgmMuted));
-    sfxMute.setAttribute("aria-pressed", String(settings.sfxMuted));
-    bgmMute.setAttribute("aria-label", settings.bgmMuted ? "取消背景音樂靜音" : "背景音樂靜音");
-    sfxMute.setAttribute("aria-label", settings.sfxMuted ? "取消遊戲音效靜音" : "遊戲音效靜音");
-    bgmMute.textContent = settings.bgmMuted ? "×" : "♪";
-    sfxMute.textContent = settings.sfxMuted ? "×" : "♫";
-    applyVolumes();
-  }
-
-  window.gameAudioSettings = {
-    registerBGM(audio) {
-      bgmTracks.add(audio);
-      audio.volume = getVolume("bgm") * 0.5;
-      return audio;
-    },
-    registerSFX(audio) {
-      sfxTracks.add(audio);
-      audio.volume = getVolume("sfx");
-      return audio;
-    },
-    getVolume,
-    applyVolumes,
-  };
-  updateUI();
 
   function reportMusicError(error) {
     console.error("無法播放背景音樂", error);
-    musicStatus.textContent = "無法播放背景音樂，請點擊畫面重試";
-    musicStatus.hidden = false;
   }
 
   function startMusic() {
     musicRequested = true;
+    if (openingScreen && !openingScreen.hidden) {
+      music.pause();
+      return;
+    }
     if (!music.paused || musicStarting || localFallbackLoading) return;
     musicStarting = true;
     if (music.error) music.load();
     music.play().then(() => {
       musicStarting = false;
-      musicStatus.hidden = true;
+      if (openingScreen && !openingScreen.hidden) {
+        music.pause();
+        return;
+      }
     }).catch((error) => {
       musicStarting = false;
+      if (openingScreen && !openingScreen.hidden) return;
       if (localFallbackLoading) {
         console.warn("本機背景音樂無法直接播放，正在重新載入", error);
       } else {
@@ -241,61 +116,14 @@ const gameAudio = (() => {
       reportMusicError(error);
     });
   });
+  window.addEventListener("openingVideoStarted", () => {
+    music.pause();
+  });
+  window.addEventListener("openingVideoFinished", () => {
+    if (musicRequested) startMusic();
+  });
   window.addEventListener("pointerdown", startMusic, true);
   window.addEventListener("keydown", startMusic, true);
-
-  function setPanelOpen(open) {
-    panel.hidden = !open;
-    backdrop.hidden = !open;
-    trigger.setAttribute("aria-expanded", String(open));
-    trigger.setAttribute("aria-label", open ? "關閉音量設定" : "開啟音量設定");
-  }
-
-  bgmSlider.addEventListener("input", () => {
-    settings.bgm = Number(bgmSlider.value);
-    saveSetting("gameBgmVolume", settings.bgm);
-    updateUI();
-  });
-  sfxSlider.addEventListener("input", () => {
-    settings.sfx = Number(sfxSlider.value);
-    saveSetting("gameSfxVolume", settings.sfx);
-    updateUI();
-  });
-  bgmMute.addEventListener("click", () => {
-    settings.bgmMuted = !settings.bgmMuted;
-    saveSetting("gameBgmMuted", settings.bgmMuted);
-    updateUI();
-  });
-  sfxMute.addEventListener("click", () => {
-    settings.sfxMuted = !settings.sfxMuted;
-    saveSetting("gameSfxMuted", settings.sfxMuted);
-    updateUI();
-  });
-  trigger.addEventListener("click", () => setPanelOpen(panel.hidden));
-  backdrop.addEventListener("pointerdown", (event) => {
-    event.stopPropagation();
-  });
-  backdrop.addEventListener("click", (event) => {
-    event.stopPropagation();
-    if (panel.contains(document.activeElement)) document.activeElement.blur();
-    setPanelOpen(false);
-  });
-
-  controls.addEventListener("keydown", (event) => {
-    event.stopPropagation();
-    if (event.key === "Escape" && !panel.hidden) {
-      event.preventDefault();
-      setPanelOpen(false);
-      trigger.focus();
-    }
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !panel.hidden) {
-      event.preventDefault();
-      setPanelOpen(false);
-      trigger.focus();
-    }
-  });
 })();
 
 const sfxTargetRms = 0.01;
@@ -2766,6 +2594,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const dialogueNextHint = document.getElementById("dialogueNextHint");
   
   const rhythmTrackArea = document.getElementById("rhythmTrackArea");
+  const keyboardHint = rhythmScene?.querySelector(".keyboard-hint");
   const rhythmWaveLabel = document.getElementById("rhythmWaveLabel");
   const rhythmWavePips = document.getElementById("rhythmWavePips");
   const rhythmEcg = document.getElementById("rhythmEcg");
@@ -2787,6 +2616,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedGender = rhythmScene
     ? rhythmScene.getAttribute("data-gender")
     : "male";
+
+  keyboardHint?.addEventListener("animationend", (event) => {
+    if (event.animationName === "keyboardHintEntry") {
+      keyboardHint.classList.add("is-compact");
+    }
+  });
 
   function alignRhythmCandlesWithInstructionBox() {
     if (!rhythmCandlesWrap || !rhythmInstructionBox) return;
@@ -3023,7 +2858,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (!rhythmIntroHint) return;
-      rhythmIntroHint.textContent = "點擊繼續";
+      rhythmIntroHint.textContent = "skip ▸";
       rhythmIntroHint.classList.add("is-visible");
     });
   }
@@ -3041,7 +2876,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     rhythmIntroDialogueIndex = 0;
     if (rhythmIntroHint) {
-      rhythmIntroHint.textContent = "點擊繼續";
+      rhythmIntroHint.textContent = "skip ▸";
       rhythmIntroHint.classList.remove("is-visible");
     }
     playRhythmIntroDialogue(0);
@@ -3077,7 +2912,7 @@ document.addEventListener("DOMContentLoaded", () => {
         excuseIntroDialogueNextHint.classList.add("is-visible");
         return;
       }
-      excuseIntroHint.textContent = "點擊繼續";
+      excuseIntroHint.textContent = "skip ▸";
       excuseIntroHint.classList.add("is-visible");
     });
   }
@@ -3092,7 +2927,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     excuseIntroDialogueNextHint.classList.remove("is-visible");
     excuseIntroDialogueIndex = 0;
-    excuseIntroHint.textContent = "點擊繼續";
+    excuseIntroHint.textContent = "skip ▸";
     excuseIntroHint.classList.remove("is-visible");
     playExcuseIntroDialogue(0);
   });
@@ -3316,6 +3151,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       rhythmEcg?.classList.remove("is-hit", "is-in-window");
       rhythmEcg?.classList.add(isPassed ? "is-stable" : "is-missed");
+      rhythmScene?.classList.remove("is-heartbeat-active", "is-heartbeat-failed");
+      if (!isPassed) rhythmScene?.classList.add("is-heartbeat-failed");
       drawAmbientTrace(performance.now());
 
       if (isPassed) {
@@ -3335,7 +3172,7 @@ document.addEventListener("DOMContentLoaded", () => {
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "點擊繼續 ▾";
+                rhythmActionBtn.textContent = "skip ▾";
                 rhythmActionBtn.dataset.outcome = "success";
                 rhythmActionBtn.disabled = false;
                 rhythmActionBtn.hidden = false;
@@ -3418,6 +3255,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showJudgment("完美通過", true);
 
         if (waveIndex >= waves.length) {
+          rhythmScene?.classList.remove("is-heartbeat-active");
           stepTimers.push(setTimeout(() => finishBranch(true), 520));
           return;
         }
@@ -3438,6 +3276,8 @@ document.addEventListener("DOMContentLoaded", () => {
         ensureAudio();
         phase = "rhythm";
         waveIndex = 0;
+        rhythmScene?.classList.remove("is-heartbeat-failed");
+        rhythmScene?.classList.add("is-heartbeat-active");
         if (rhythmTrackArea) rhythmTrackArea.classList.remove("is-standby");
         gameSfx.play("ecg-start");
         if (rhythmActionBtn) rhythmActionBtn.hidden = true;
@@ -3450,6 +3290,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
       stop() {
         isSweepActive = false;
+        rhythmScene?.classList.remove("is-heartbeat-active", "is-heartbeat-failed");
         rhythmEcg?.classList.remove("is-stable", "is-missed", "is-hit", "is-in-window");
         wavePeaks = [];
         waveStrengths = [];
@@ -3507,6 +3348,7 @@ document.addEventListener("DOMContentLoaded", () => {
       TOTAL_CANDLES -
       (success ? PASS_EXTINGUISH_COUNT : FAIL_EXTINGUISH_COUNT);
     phase = "inactive";
+    rhythmScene?.classList.remove("is-heartbeat-active", "is-heartbeat-failed");
     window.dispatchEvent(
       new CustomEvent("rhythmBranchCompleted", {
         detail: { success, litCandles, gender: selectedGender },
@@ -3533,6 +3375,7 @@ document.addEventListener("DOMContentLoaded", () => {
     introLineIndex = 0;
     phase = "inactive";
     rhythmScene.classList.remove("is-miss-flash");
+    keyboardHint?.classList.remove("is-compact");
     alignRhythmCandlesWithInstructionBox();
     rhythmScene.classList.add("is-active");
     resetCandles();
@@ -4617,24 +4460,15 @@ const commonDialoguesRounds = [
     const openingVideo =
         document.getElementById("openingVideo");
 
-    // 跳過序幕按鈕
-    const skipBtn =
-        document.getElementById("openingSkipBtn");
-
-    // 開啟聲音按鈕
+    // 聲音切換按鈕
     const soundBtn =
         document.getElementById("openingSoundBtn");
-
-    const replayBtn =
-        document.getElementById("openingReplayBtn");
 
     // 確認必要元素存在
     if (
         !openingScreen ||
         !openingVideo ||
-        !skipBtn ||
-        !soundBtn ||
-        !replayBtn
+        !soundBtn
     ) {
         console.error("【開場動畫】缺少影片畫面所需的元素");
         openingScreen?.remove();
@@ -4662,19 +4496,20 @@ const commonDialoguesRounds = [
        【三】控制聲音按鈕
        ====================================== */
 
-    function showSoundButton(text) {
-
-        // 修改按鈕文字
-        soundBtn.textContent = text;
-
-        // 顯示按鈕
+    function showSoundButton() {
         soundBtn.hidden = false;
+        updateSoundButton();
     }
 
     function hideSoundButton() {
-
-        // 隱藏按鈕
         soundBtn.hidden = true;
+    }
+
+    function updateSoundButton() {
+        const isMuted = openingVideo.muted;
+        soundBtn.classList.toggle("is-muted", isMuted);
+        soundBtn.setAttribute("aria-label", isMuted ? "開啟聲音" : "關閉聲音");
+        soundBtn.setAttribute("aria-pressed", String(!isMuted));
     }
 
     /* ======================================
@@ -4699,8 +4534,7 @@ const commonDialoguesRounds = [
 
             if (isFinished || attempt !== playbackId) return;
 
-            // 播放成功，隱藏聲音按鈕
-            hideSoundButton();
+            showSoundButton();
 
             console.log(
                 "【開場動畫】有聲自動播放成功"
@@ -4731,12 +4565,7 @@ const commonDialoguesRounds = [
 
                 if (isFinished || attempt !== playbackId) return;
 
-                // 如果仍然是靜音
-                if (openingVideo.muted) {
-
-                    // 顯示開啟聲音按鈕
-                    showSoundButton("♫ 開啟聲音");
-                }
+                showSoundButton();
 
                 console.log(
                     "【開場動畫】靜音播放成功"
@@ -4751,8 +4580,7 @@ const commonDialoguesRounds = [
                     mutedError
                 );
 
-                // 顯示手動播放按鈕
-                showSoundButton("▶ 播放影片");
+                showSoundButton();
             }
         } finally {
 
@@ -4762,32 +4590,31 @@ const commonDialoguesRounds = [
     }
 
     /* ======================================
-       【六】手動開啟聲音
+       【六】切換影片聲音
        ====================================== */
 
-    async function enableOpeningSound() {
+    async function toggleOpeningSound() {
 
         if (isFinished) return;
         const attempt = playbackId;
 
-        // 記錄玩家已手動操作
+        if (!openingVideo.muted) {
+            openingVideo.muted = true;
+            userEnabledSound = false;
+            updateSoundButton();
+            return;
+        }
+
         userEnabledSound = true;
-
-        // 取消靜音
         openingVideo.muted = false;
-
-        // 設定音量
         openingVideo.volume = 1;
-
+        updateSoundButton();
         try {
-
-            // 從目前播放進度繼續
             await openingVideo.play();
 
             if (isFinished || attempt !== playbackId) return;
 
-            // 成功後隱藏按鈕
-            hideSoundButton();
+            showSoundButton();
 
             console.log(
                 "【開場動畫】聲音已開啟"
@@ -4802,11 +4629,11 @@ const commonDialoguesRounds = [
                 error
             );
 
-            // 失敗後恢復靜音
             openingVideo.muted = true;
+            userEnabledSound = false;
+            updateSoundButton();
 
-            // 顯示重試按鈕
-            showSoundButton("♫ 開啟聲音");
+            showSoundButton();
         }
     }
 
@@ -4850,7 +4677,6 @@ const commonDialoguesRounds = [
 
         setTimeout(() => {
 
-            skipBtn.hidden = true;
             hideSoundButton();
             openingScreen.hidden = true;
             window.dispatchEvent(new Event("openingVideoFinished"));
@@ -4862,33 +4688,11 @@ const commonDialoguesRounds = [
        【八】綁定按鈕事件
        ====================================== */
 
-    // 點擊開啟聲音
+    // 點擊切換聲音
     soundBtn.addEventListener(
         "click",
-        enableOpeningSound
+        toggleOpeningSound
     );
-
-    // 點擊跳過序幕
-    skipBtn.addEventListener(
-        "click",
-        finishOpeningVideo
-    );
-
-    replayBtn.addEventListener("click", (event) => {
-        event.stopPropagation();
-        if (!isFinished || !openingScreen.hidden) return;
-        isFinished = false;
-        userEnabledSound = false;
-        openingVideo.currentTime = 0;
-        updateOpeningVisibility();
-        skipBtn.hidden = false;
-        skipBtn.textContent = "跳過序幕 »";
-        hideSoundButton();
-        openingScreen.hidden = false;
-        openingScreen.classList.remove("is-finished", "is-video-tail");
-        window.dispatchEvent(new Event("openingVideoStarted"));
-        startOpeningVideo();
-    });
 
     // 影片播放完畢
     openingVideo.addEventListener(
@@ -4919,11 +4723,8 @@ const commonDialoguesRounds = [
                 "【開場動畫】影片載入失敗"
             );
 
-            // 修改跳過按鈕文字
-            skipBtn.textContent = "進入遊戲 »";
-
-            // 隱藏聲音按鈕
             hideSoundButton();
+            finishOpeningVideo();
         }
     );
 

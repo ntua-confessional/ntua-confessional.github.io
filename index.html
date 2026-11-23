@@ -32,23 +32,17 @@
         您的瀏覽器不支援 MP4 影片。
     </video>
 
-    <!-- 【新增】右上角：跳過序幕 -->
-    <button
-        type="button"
-        class="opening-skip-btn"
-        id="openingSkipBtn"
-    >
-        跳過序幕 »
-    </button>
-
-    <!-- 【新增】右下角：開啟聲音 -->
+    <!-- 【新增】右上角：切換聲音 -->
     <button
         type="button"
         class="opening-sound-btn"
         id="openingSoundBtn"
         hidden
+        aria-label="開啟聲音"
+        aria-pressed="false"
     >
-        ♫ 開啟聲音
+        <i data-lucide="volume-x" class="sound-muted-icon" aria-hidden="true"></i>
+        <i data-lucide="volume-2" class="sound-on-icon" aria-hidden="true"></i>
     </button>
 
 </div>
@@ -60,7 +54,6 @@
 
     <!-- 第一頁：開場動畫頁面 -->
     <main class="stage intro-scene is-active" id="introScene" inert>
-        <button type="button" class="opening-replay-btn" id="openingReplayBtn">重播序幕</button>
         <div class="scene">
             <!-- 第一層（背景）：告解室線條描繪，隨後淡出退為背景 -->
             <svg class="svg-draw-logo" id="logoSvg" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg"
@@ -319,7 +312,7 @@
                 <br />
                 <span class="story-intro-final">你不是來尋求寬恕的，而是來給予審判的</span></p>
         </div>
-        <p class="story-intro-hint">點擊畫面繼續</p>
+        <p class="story-intro-hint">skip ▸</p>
     </section>
 
     <!-- 第四頁-2：前情提要（打字機效果）與 Parallax.js 筆記線索頁面 -->
@@ -750,7 +743,7 @@
         <span class="rhythm-intro-dialogue-box" id="rhythmIntroDialogueBox1" role="group"
             aria-label="神父對話">
             <span class="rhythm-intro-dialogue-text" id="rhythmIntroDialogueText1"></span>
-            <span class="dialogue-next-hint" id="rhythmIntroDialogueNextHint">點擊繼續 ▾</span>
+            <span class="dialogue-next-hint" id="rhythmIntroDialogueNextHint">next ▾</span>
         </span>
         <span class="rhythm-intro-dialogue-box" id="rhythmIntroDialogueBox2" role="group"
             aria-label="神父對話">
@@ -759,13 +752,65 @@
     </span>
     <span class="rhythm-intro-hint-1" id="rhythmIntroHint2">剩下五根蠟燭</span>
     <button type="button" class="rhythm-intro-hint-2" id="rhythmIntroHint">
-        點擊繼續
+        Skip ▸
     </button>
 </div>
 
 <!-- 第七頁特殊環節：累計扣兩分時啟動心跳檢定 -->
 
 <section class="rhythm-scene" id="rhythmScene" aria-label="心跳節奏檢定" data-gender="male">
+    <!-- ========================================
+     【新增】空白鍵操作提示 UI
+======================================== -->
+<div class="keyboard-hint" aria-hidden="true">
+
+    <!-- 鍵盤外框 -->
+    <div class="keyboard">
+
+        <!-- 第一排：10 個無字母按鍵 -->
+        <div class="keyboard-row">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span>
+        </div>
+
+        <!-- 第二排：9 個無字母按鍵 -->
+        <div class="keyboard-row">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+        </div>
+
+        <!-- 第三排：7 個無字母按鍵 -->
+        <div class="keyboard-row">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span>
+        </div>
+
+        <!-- 第四排：功能鍵與空白鍵 -->
+        <div class="keyboard-row keyboard-bottom-row">
+
+            <!-- 左側無字母功能鍵 -->
+            <span class="keyboard-small"></span>
+            <span class="keyboard-small"></span>
+
+            <!-- 【重點】唯一有文字的空白鍵 -->
+            <span class="keyboard-space">SPACE</span>
+
+            <!-- 右側無字母功能鍵 -->
+            <span class="keyboard-small"></span>
+            <span class="keyboard-small"></span>
+
+        </div>
+
+    </div>
+
+    <!-- 鍵盤下方提示文字 -->
+    <p class="keyboard-hint-text">按下空白鍵繼續</p>
+
+</div>
     <div class="rhythm-dialogue-box" id="rhythmDialogueBox" role="group" aria-label="神父對話框">
         <p class="rhythm-dialogue-text" id="rhythmDialogueText"></p>
         <span class="dialogue-next-hint" id="dialogueNextHint">按空白鍵繼續 ▾</span>
@@ -804,6 +849,7 @@
     <div class="rhythm-character-wrap" id="rhythmCharacterWrap">
         <img class="rhythm-character-img is-black-bg" id="rhythmCharacterImg"
             src="./images/PC_B/PC_heart.PNG" alt="角色按住胸口" />
+        <img class="rhythm-heart" src="./images/bg/heart.png" alt="" aria-hidden="true" />
     </div>
 
     <div class="rhythm-candles-wrap" id="rhythmCandlesWrap" aria-label="燭火狀態">
@@ -838,7 +884,7 @@
         <span class="rhythm-intro-dialogue-box" id="excuseIntroDialogueBox1" role="group"
             aria-label="神父對話">
             <span class="rhythm-intro-dialogue-text" id="excuseIntroDialogueText1"></span>
-            <span class="dialogue-next-hint" id="excuseIntroDialogueNextHint">點擊繼續 ▾</span>
+            <span class="dialogue-next-hint" id="excuseIntroDialogueNextHint">next ▾</span>
         </span>
         <span class="rhythm-intro-dialogue-box" id="excuseIntroDialogueBox2" role="group"
             aria-label="神父對話">
@@ -847,7 +893,7 @@
     </span>
     <span class="rhythm-intro-hint-1">剩下兩根蠟燭</span>
     <button type="button" class="rhythm-intro-hint-2" id="excuseIntroHint">
-        點擊繼續
+        Skip ▸
     </button>
 </div>
 
@@ -1002,51 +1048,6 @@
 </template>
 
     <audio id="backgroundMusic" src="bg_music/C_music.wav" preload="metadata" loop></audio>
-    <div id="audioControls">
-        <div class="audio-settings-backdrop" id="audioSettingsBackdrop" aria-hidden="true" hidden></div>
-        <button type="button" class="audio-settings-trigger" id="audioSettingsTrigger"
-            aria-label="開啟音量設定" aria-controls="audioSettingsPanel" aria-expanded="false">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M3 7h8m6 0h4M3 17h4m6 0h8"/>
-                <circle cx="14" cy="7" r="3"/>
-                <circle cx="10" cy="17" r="3"/>
-            </svg>
-            <span>音量</span>
-        </button>
-        <section class="audio-settings-panel" id="audioSettingsPanel"
-            role="dialog" aria-modal="false" aria-label="聲音設定" hidden>
-            <div class="audio-settings-title">
-                <span aria-hidden="true">◇</span><h2>聲音設定</h2><span aria-hidden="true">◇</span>
-            </div>
-            <div class="audio-control-group">
-                <div class="audio-control-heading">
-                    <label for="bgmVolume">背景音樂</label>
-                    <output id="bgmVolumeValue" for="bgmVolume">10%</output>
-                </div>
-                <div class="audio-control-row">
-                    <input type="range" id="bgmVolume" min="0" max="100" value="10">
-                    <button type="button" class="audio-mute-button" id="bgmMute"
-                        aria-label="背景音樂靜音" aria-pressed="false">♪</button>
-                </div>
-            </div>
-            <div class="audio-control-group">
-                <div class="audio-control-heading">
-                    <label for="sfxVolume">遊戲音效</label>
-                    <output id="sfxVolumeValue" for="sfxVolume">80%</output>
-                </div>
-                <div class="audio-control-row">
-                    <input type="range" id="sfxVolume" min="0" max="100" value="80">
-                    <button type="button" class="audio-mute-button" id="sfxMute"
-                        aria-label="遊戲音效靜音" aria-pressed="false">♫</button>
-                </div>
-            </div>
-        </section>
-        <div class="audio-notices">
-            <p class="audio-status" id="musicStatus" role="status" hidden></p>
-            <p class="audio-status" id="soundStatus" role="status" hidden></p>
-            <p class="audio-status" id="audioStorageStatus" role="status" hidden></p>
-        </div>
-    </div>
 
 <!-- 蠟燭游標：使用透明背景 PNG 圖片 -->
 <div id="candleCursor" class="candle-cursor" aria-hidden="true">
@@ -1060,6 +1061,8 @@
 
     <!-- Parallax.js 視差外掛函式庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/parallax/3.1.0/parallax.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>if (window.lucide) lucide.createIcons();</script>
     <script src="js/motion.js"></script>
 </body>
 
