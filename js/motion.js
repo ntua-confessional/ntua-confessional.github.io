@@ -2054,7 +2054,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ],
       choices: ["保持緘默", "保持憐憫", "接受捐贈", "並未公正"],
       choiceHints: ["在應該發聲時辜負信眾", "對一位曾犯下過錯的人", "接受捐贈，並替他保管「舊物」", "在審判中，聽信有聲望的人"],
-      safeChoiceIndex: 1,
+      safeChoiceIndex: 3,
       feedback: {
         safe: [{ side: "left", text: "沉默有時是慈悲，有時是逃避。" },
           { side: "right", text: " 那麼，該如何分辨呢？" },
@@ -2120,7 +2120,7 @@ document.addEventListener("DOMContentLoaded", () => {
          text: "我認為，他們應當＿＿＿＿。" },
       ],
       choices: ["受到同等的懲罰", "受知曉的人制裁", "重新接受調查", "由受害者決定"],
-      choiceHints: ["", "由知曉內情的人親自給予", "並未自己的行為承擔責任", "由受害者決定他們應當付的代價"],
+      choiceHints: ["", "由知曉內情的人親自給予", "並為自己的行為承擔責任", "由受害者決定他們應當付的代價"],
       safeChoiceIndex: 2,
       feedback: {
         safe: [{ side: "left", text: "所謂真相應當經過查證。" },
