@@ -2316,6 +2316,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 從警告頁初始化並進入題目互動
   function enterQuestionScene() {
+    if (!warningScene || !warningScene.classList.contains("is-active")) return;
     // 如果找不到第七頁，停止執行
     if (!questionScene) return;
 
@@ -2595,6 +2596,8 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const rhythmTrackArea = document.getElementById("rhythmTrackArea");
   const keyboardHint = rhythmScene?.querySelector(".keyboard-hint");
+  const keyboardSpace = keyboardHint?.querySelector(".keyboard-space");
+  const keyboardMotionPreference = matchMedia("(prefers-reduced-motion: reduce)");
   const rhythmWaveLabel = document.getElementById("rhythmWaveLabel");
   const rhythmWavePips = document.getElementById("rhythmWavePips");
   const rhythmEcg = document.getElementById("rhythmEcg");
@@ -2608,6 +2611,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const rhythmCandlesWrap = document.getElementById("rhythmCandlesWrap");
   const rhythmCandlesImg = document.getElementById("rhythmCandlesImg");
   const rhythmInstructionBox = document.getElementById("rhythmInstructionBox");
+  const rhythmInstructionContent = document.getElementById("rhythmInstructionContent");
   const rhythmInstructionText = document.getElementById(
     "rhythmInstructionText",
   );
@@ -2617,9 +2621,53 @@ document.addEventListener("DOMContentLoaded", () => {
     ? rhythmScene.getAttribute("data-gender")
     : "male";
 
+  function compactKeyboardHint() {
+    if (!keyboardHint || !rhythmInstructionContent) return;
+    keyboardHint.classList.remove("is-moving");
+    keyboardHint.style.removeProperty("transform");
+    keyboardHint.style.removeProperty("transition");
+    keyboardHint.style.removeProperty("animation");
+    keyboardHint.classList.add("is-compact");
+    rhythmInstructionContent.appendChild(keyboardHint);
+  }
+
   keyboardHint?.addEventListener("animationend", (event) => {
-    if (event.animationName === "keyboardHintEntry") {
-      keyboardHint.classList.add("is-compact");
+    if (event.target !== keyboardHint || event.animationName !== "keyboardHintEntry" ||
+        !keyboardSpace || !rhythmInstructionContent || !rhythmDialogueBox) return;
+
+    keyboardHint.style.animation = "none";
+    keyboardHint.style.transition = "none";
+    keyboardHint.style.transform = "scale(1)";
+    const start = keyboardSpace.getBoundingClientRect();
+
+    // Measure the compact layout before animating the full keyboard towards it.
+    keyboardHint.classList.add("is-compact");
+    keyboardHint.style.removeProperty("transform");
+    rhythmInstructionContent.appendChild(keyboardHint);
+    const end = keyboardSpace.getBoundingClientRect();
+
+    keyboardHint.classList.remove("is-compact");
+    rhythmScene.insertBefore(keyboardHint, rhythmDialogueBox);
+    keyboardHint.style.transform = "scale(2.25)";
+    keyboardHint.getBoundingClientRect();
+    keyboardHint.classList.add("is-moving");
+    keyboardHint.style.removeProperty("animation");
+    keyboardHint.style.removeProperty("transition");
+    const dx = end.left + end.width / 2 - start.left - start.width / 2;
+    const dy = end.top + end.height / 2 - start.top - start.height / 2;
+    keyboardHint.style.transform = `translate(${dx}px, ${dy}px) scale(1)`;
+  });
+
+  keyboardHint?.addEventListener("transitionend", (event) => {
+    if (event.target === keyboardHint && event.propertyName === "transform" &&
+        keyboardHint.classList.contains("is-moving")) {
+      compactKeyboardHint();
+    }
+  });
+
+  keyboardMotionPreference.addEventListener("change", (event) => {
+    if (event.matches && rhythmScene?.classList.contains("is-active")) {
+      compactKeyboardHint();
     }
   });
 
@@ -3216,7 +3264,7 @@ document.addEventListener("DOMContentLoaded", () => {
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "回到告解 ▸";
+                rhythmActionBtn.textContent = "Skip ▸";
                 rhythmActionBtn.dataset.outcome = "failure";
                 rhythmActionBtn.disabled = false;
                 rhythmActionBtn.hidden = false;
@@ -3375,7 +3423,13 @@ document.addEventListener("DOMContentLoaded", () => {
     introLineIndex = 0;
     phase = "inactive";
     rhythmScene.classList.remove("is-miss-flash");
-    keyboardHint?.classList.remove("is-compact");
+    if (keyboardHint && rhythmDialogueBox) {
+      keyboardHint.classList.remove("is-compact", "is-moving");
+      keyboardHint.style.removeProperty("transform");
+      keyboardHint.style.removeProperty("transition");
+      keyboardHint.style.removeProperty("animation");
+      rhythmScene.insertBefore(keyboardHint, rhythmDialogueBox);
+    }
     alignRhythmCandlesWithInstructionBox();
     rhythmScene.classList.add("is-active");
     resetCandles();
@@ -3385,6 +3439,9 @@ document.addEventListener("DOMContentLoaded", () => {
       rhythmActionBtn.disabled = true;
     }
     playIntroDialogueLine(0);
+    if (keyboardMotionPreference.matches) {
+      compactKeyboardHint();
+    }
   });
 
   requestAnimationFrame(() => {
@@ -4511,6 +4568,9 @@ const commonDialoguesRounds = [
         soundBtn.setAttribute("aria-label", isMuted ? "開啟聲音" : "關閉聲音");
         soundBtn.setAttribute("aria-pressed", String(!isMuted));
     }
+
+    // 按鈕一開始就顯示，不必等影片開始播放
+    updateSoundButton();
 
     /* ======================================
        【四】優先嘗試有聲自動播放

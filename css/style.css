@@ -2842,8 +2842,8 @@ body {
   align-self: flex-start;
   width: fit-content;
   max-width: 100%;
-  min-height: clamp(96px, 13.5vh, 138px);
-  padding: clamp(18px, 2.3vh, 26px) clamp(30px, 3.6vw, 50px);
+  min-height: clamp(64px, 9vh, 92px);
+  padding: clamp(8px, 1.1vh, 14px) clamp(30px, 3.6vw, 50px);
   text-align: left;
   background: rgba(105, 111, 172, 0.5);
   border: 0;
@@ -2864,7 +2864,7 @@ body {
 .rhythm-intro-dialogue-box .dialogue-next-hint {
   position: absolute;
   left: clamp(30px, 3.6vw, 50px);
-  bottom: 8px;
+  bottom: 4px;
   margin: 0;
 }
 
@@ -3025,17 +3025,10 @@ body {
 
 .keyboard-hint {
     position: absolute;
-
-    /* 【保留】控制完整鍵盤的基礎位置 */
-    right: 4%;
-    bottom: 5%;
-
-    /* 【新增】完整鍵盤的額外位移 */
-    translate: -40px -20px;
-
-    /* 【新增】設定縮放基準為右下角 */
-    transform-origin: right bottom;
-
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    transform-origin: center;
     z-index: 20;
 
     display: flex;
@@ -3048,34 +3041,45 @@ body {
     pointer-events: none;
 }
 
-.rhythm-scene.is-active .keyboard-hint:not(.is-compact) {
-    animation: keyboardHintEntry 3s ease-in-out both;
+.rhythm-scene.is-active .keyboard-hint:not(.is-compact):not(.is-moving) {
+    animation: keyboardHintEntry 2s ease-in-out both;
 }
 
 @keyframes keyboardHintEntry {
-    0%, 66.667% {
-        transform: translate(calc(-46vw + 50%), calc(-45vh + 50%)) scale(2.25);
+    from, to {
+        transform: scale(2.25);
     }
-    100% {
-        transform: translate(0, 0) scale(1);
-    }
+}
+
+.keyboard-hint.is-moving {
+    transition: transform 1s ease-in-out;
+}
+
+.keyboard-hint.is-moving .keyboard {
+    background: transparent;
+    border-color: transparent;
+    transition: background-color 1s ease-in-out, border-color 1s ease-in-out;
+}
+
+.keyboard-hint.is-moving .keyboard-row:not(.keyboard-bottom-row),
+.keyboard-hint.is-moving .keyboard-small,
+.keyboard-hint.is-moving .keyboard-hint-text {
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
 }
 
 /* 【修改】精簡鍵盤的專用位置與大小 */
 .keyboard-hint.is-compact {
+    position: static;
+    flex: none;
+    align-items: center;
+    justify-content: center;
     gap: 0;
-
-    /* 【新增】精簡模式的專用位置 */
-    translate: -80px -15px;
-
-    /* 【新增】精簡模式縮小至*/
-    scale: 1;
-
-    /* 【新增】以右下角為縮放基準 */
-    transform-origin: right bottom;
+    translate: none;
 }
 
 .keyboard-hint.is-compact .keyboard {
+    padding: 0;
     background: transparent;
     border-color: transparent;
 }
@@ -3094,27 +3098,6 @@ body {
     margin-top: 0;
     justify-content: flex-end;
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .rhythm-scene.is-active .keyboard-hint {
-        transform: none;
-    }
-
-    .rhythm-scene.is-active .keyboard-row:not(.keyboard-bottom-row) {
-        visibility: hidden;
-    }
-
-    .rhythm-scene.is-active .keyboard-small,
-    .rhythm-scene.is-active .keyboard-hint-text {
-        display: none;
-    }
-
-    .rhythm-scene.is-active .keyboard-bottom-row {
-        margin-top: 0;
-        justify-content: flex-end;
-    }
-}
-
 
 /* ========================================
    【新增】鍵盤外框
@@ -4034,7 +4017,16 @@ body {
 }
 
 
+.rhythm-instruction-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  max-width: 100%;
+}
+
 .rhythm-instruction-text {
+  min-width: 0;
   margin: 0;
   color: #ffffff;
   font-size: clamp(16px, 1.95vw, 27px);
