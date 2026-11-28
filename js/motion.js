@@ -2906,7 +2906,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (!rhythmIntroHint) return;
-      rhythmIntroHint.textContent = "skip ▸";
+      rhythmIntroHint.textContent = "next ▸";
       rhythmIntroHint.classList.add("is-visible");
     });
   }
@@ -2924,7 +2924,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     rhythmIntroDialogueIndex = 0;
     if (rhythmIntroHint) {
-      rhythmIntroHint.textContent = "skip ▸";
+      rhythmIntroHint.textContent = "next ▸";
       rhythmIntroHint.classList.remove("is-visible");
     }
     playRhythmIntroDialogue(0);
@@ -2960,7 +2960,7 @@ document.addEventListener("DOMContentLoaded", () => {
         excuseIntroDialogueNextHint.classList.add("is-visible");
         return;
       }
-      excuseIntroHint.textContent = "skip ▸";
+      excuseIntroHint.textContent = "next ▸";
       excuseIntroHint.classList.add("is-visible");
     });
   }
@@ -2975,7 +2975,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     excuseIntroDialogueNextHint.classList.remove("is-visible");
     excuseIntroDialogueIndex = 0;
-    excuseIntroHint.textContent = "skip ▸";
+    excuseIntroHint.textContent = "next ▸";
     excuseIntroHint.classList.remove("is-visible");
     playExcuseIntroDialogue(0);
   });
@@ -3220,7 +3220,7 @@ document.addEventListener("DOMContentLoaded", () => {
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "skip ▾";
+                rhythmActionBtn.textContent = "next ▾";
                 rhythmActionBtn.dataset.outcome = "success";
                 rhythmActionBtn.disabled = false;
                 rhythmActionBtn.hidden = false;
@@ -3264,7 +3264,7 @@ document.addEventListener("DOMContentLoaded", () => {
             32,
             () => {
               if (rhythmActionBtn) {
-                rhythmActionBtn.textContent = "Skip ▸";
+                rhythmActionBtn.textContent = "next ▸";
                 rhythmActionBtn.dataset.outcome = "failure";
                 rhythmActionBtn.disabled = false;
                 rhythmActionBtn.hidden = false;
